@@ -158,11 +158,11 @@ Now that you have your image, you can upload it to the HPC cluser using scp
 
 `scp my_singularity.sif patrh5@hpc-head-002:~`
 
-This will send it to your home directory :joy:!
+This will send it to your home directory 😊!
 
 ## In the shared software area
 
-Until I need to use this, i'll save time typing it out. See the HPC user guide 7.3.1 for this info :joy:.
+Until I need to use this, i'll save time typing it out. See the HPC user guide 7.3.1 for this info 😊.
 
 You can check which software has already been installed in the shared software area:
 
@@ -316,7 +316,7 @@ Once the slurm file is ready, you just need to submit the job:
 
 `sbatch slurm_script.sh SRR001
 
-##Using a 'for' loop to submit several jobs simultaneously:
+## Using a 'for' loop to submit several jobs simultaneously:
 
 ```
 for i in $(cat data/runids.txt); dp sbatch slurm_script.sh $i; done
@@ -343,17 +343,21 @@ The line `~/audiowaveform.sif` refers to the singularity image file.
 
 The application here is audiowaveform
 
-#Viewing and managing your jobs
+# Viewing and managing your jobs
 
 You can use squeue to view ther status of jobs in the queue
 
 `squeue -l`
 
-While the job is running you can use scontrol to check its status:
+**While the job is running** you can use scontrol to check its status:
 
 `scontrol show jobid <job_id>`
 
-You can use sinfo to check the sttaus of the cluster nodes:
+**Once your job is finished**, you can use sacct to view details of your job. This is very useful information, because it will allow you to define the exact requirements of your jobs and make more efficient use of the computational resources!
+
+`sacct --format=User,JobID,Jobname,partition,state,time,start,end,elapsed,MaxRss,MaxVMSize,nnodes,ncpus,nodelist -j <job_id>
+
+You can use sinfo to check the status of the cluster nodes:
 
 `sinfo -l`
 
@@ -362,7 +366,23 @@ Other states you may see:
 - Alloc - this means the node is fully utilized by running jobs, so new jobs must wait in the queue
 - Drain - this means the node is unable to receive new jobs, either due to an error or scheduled maintenance
 
-Look at your own jobs in the queue:
+
+**You can cancel** your jobs with:
+
+`scancel <job_id>
+
+**You can look at your own jobs** in the queue:
 
 `squeue -u patrh5`
 
+# Arraying Jobs in Slurm
+
+The more advanced way to use slurm is to array your jobs. When doing loads of repetitive sequential analysis, this is a more effienct approach than having individual ones.
+
+https://slurm.schedmd.com/job_array.html
+
+# Snakemake
+
+A python inspired workflow / pipeline management system to create reproducible and scalable data, creating contained environments that you can later deploy and execute in systems with different configurations 
+
+https://snakemake.readthedocs.io/en/stable/
