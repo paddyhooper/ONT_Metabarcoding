@@ -122,7 +122,7 @@ Singularity, sometimes called Apptainer, is a useful tool that allows you to ins
 
 This is a similar concept to **docker**. Singularity is commonly used on HPC systems instead of docker, as singularity can be run without admin rights. 
 
-### Create a singularity image
+## Create a singularity image
 
 You can either install singularity on your own computer. Alternatively you can use our software-building server hpc-sw-003, which already has it installed. Please contact TS to request access to this server.  
 
@@ -189,9 +189,187 @@ To load this software onto your environment
 
 Okay... this is why we're here. 
 
+Now you have all the files and programs you need, but there’s a problem: lots of people are running huge data analyses simultaneously. That’s why job scheduling systems have been developed: to ensure a fair distribution of the computing resources across all users and to allow the cluster administrators to manage such resources. 
 
+HPC uses a standard open-source job scheduling system called Slurm. A complete user guide can be found on their [website](https://slurm.schedmd.com/tutorials.html) and ideally you should become familiar with it. 
 
+# Partitions / queues explained
 
+The cluster has four 'partitions' or 'queues' where you submit your analyses as jobs. The decision here is the time and computational requirement of your jobs: hour, day, week, and month. As a general rule, the shorter the job, the less computationally expensive, the faster it gets asigned. Long analyses have low priority.
+
+| Partition | Use  case |
+| --- | --- |
+| Hour | Very short jobs, or things that can be sped up to less than hour by multithreading |
+| Day | Average jobs, or things that even with multithreading  can take up to 24 hours |
+| Week | Long jobs that could take up to seven days, either because they cannot be parallelised or because they have low priority |
+| Month | Non-important jobs that can run for a long time on low priority |
+
+> Additionally, there is an interactive partition, that can be used to test computationally intensive tasks (almost any job really) to see how they perform, with a strict control of the used resources. There are many ways of using interactive, but it should not be abused as it can reduce the priority assigned to your future analyses. This is because the scheduling system calculates the priority of your jobs depending on how much you’re using the cluster, and usually when you use an interactive session you’re requesting a lot of resources (most of which you aren’t even using).
+
+# How to submit a job
+The first step is to create a file that contains all the instructions for the job schduler to run the analysis. 
+
+This includes:
+1. Specifying how to run the job
+2. Install or activate any softare
+3. Run a premade script
+
+## #SBATCH lines allow you to define various options for your job
+
+Most of these options are not required and there are many more than listed below, but they are important for optimization when the cluster gets busy and lots of people are submitting jobs to the same partition.
+
+|#SBATCH command | Function |
+| --- | --- |
+| -J | Job Name |
+| -p | Partition (hour, day, week, month) |
+| -t | Time Limit, at what time does the partition end |
+| --mem | minimum memory in MB |
+| -c | number of CPUs |
+| -e | file for standard error |
+| -o | file for standard output |
+| -w | name of nodes to run, e.g. hpc-gpu-001 |
+| --mail-user | who to send email notification for job state changes |
+| --mail-type | notify on state change: BEGIN, END, FAIL, ALL |
+
+More options [here](https://slurm.schedmd.com/sbatch.html)
+
+These lines are required if you are using conda from your home directory:
+`source ~/miniconda3/etc/profile.d/conda.sh`
+`conda init bash`
+
+This line allows you to activate your conda environment called 'base':
+conda activate base
+
+The echo commands show how you can add additional output for your job
+
+```
+echo "Starting at 'date'"
+echo "Running on hosts: $SLURM_NODELIST"
+echo "Running on $SLURM_NNODES nodes"
+echo "Current working directory is 'pwd'."
+```
+
+Finally, the actual command that you're running, in this example i'm using python to run a script called Python_Script.py, which is located in the same directory as my slurm_script.sh. You  **have** to write srun before your command so the scheduler knows you're queueing.
+
+`srun python python_script.py`
+
+## Let's put this all together, in a nano file called 'slurm_script.sh'
+
+First open Nano, a word editor, to write your script on the command line:
+
+`nano slurm_script.sh`
+
+> The first line of your script is always #!/bin/bash, this is called a **she-bang** and it specifies the start of a bash script.  The shell’s name is an acronym for Bourne-again shell. Bash can execute the vast majority of scripts and thus is widely used because it has more features, is well developed and better syntax.
+
+```
+#!/bin/bash 
+#SBATCH -J job_title
+#SBATCH -p day
+#SBATCH -t 00:30:00
+#SBATCH --mem=2048
+#SBATCH -c 4
+#SBATCH -e /home/job_folder/job.%J.err
+#SBATCH -o /home/job_folder/job.%J.out
+#SBATCH -w hpc-gpu-001
+#SBATCH --mail-user=p.hooper@nhm.ac.uk
+#SBATCH --mail-type=ALL
+
+source ~/miniconda3/etc/profile.d/conda.sh
+conda init bash
+conda activate base
+
+echo "Starting at 'date'"
+echo "Running on hosts: $SLURM_NODELIST"
+echo "Running on $SLURM_NNODES nodes"
+echo "Current working directory is 'pwd'"
+
+srun python python_script.py
+```
+
+***now we have our script it's time to submit our job!***
+
+Use sbatch to submit your job:
+
+`sbatch slurm_script.sh`
+
+ > If your analysis produces intermediate files between steps, you should set up a scratch folder for temporary files at /mbl/share/scratch. Ideally, clean up after your job. Scratch is set to auto-delete files after 21 days.
+
+## Example 2
+
+```
 #!/bin/bash
-#SBATCH -J
-#SBATCH -p
+#SBATCH -partition=hour
+#SBATCH --output=myjob%J.out
+#SBATCH -t 01:00:00
+#SBATCH --mem-per-cpu=2G
+#SBATCH --cpus-per-task=2
+
+ml adapterremoval
+
+NAME=$1
+
+srun AdapterRemoval --file1 data/${NAME}_1.fastq.gz --file2 data/${NAME}_2.fastq.gz --threads $SLURM_CPUS_PER_TASK --gzip --basename ${NAME} --m 3 --minlength 25 --trimns --trimqualities --collapse --output1 analyses/adapterremoval/${NAME}_trimmed_R1.fastq.gz --output2 analyses/adapterremoval/${NAME}_trimmed_R2.fastq.gz --outputcollapsed analyses.adapterremoval/${NAME}_trimmed_R1R2.fastq.gz --outputcollapsedtruncated analyses/adapterremoval/${NAME}_truncated.fastq.gz --discarded analyses/adapterremoval/${NAME}_discarded.fastq.gz --singleton analyses/adapterremoval/${NAME}_singleton.fastq.gz --settings analyses/adapterremoval/${NAME}.settings
+```
+
+This time, isntead of using conda, i'm using the **ml** command to locate the [AdapterRemoval](https://adapterremoval.readthedocs.io/en/stable/) software from the shared software area:
+
+`ml adapterremoval
+
+Also notice, how instead of having a fixed sample ID, you can add variables to your .sh file. The variable NAME allows you to make the shell script more flexible, as you do not have to modify it any time you have a different sample name:
+
+`NAME=$1
+
+Once the slurm file is ready, you just need to submit the job:
+
+`sbatch slurm_script.sh SRR001
+
+##Using a 'for' loop to submit several jobs simultaneously:
+
+```
+for i in $(cat data/runids.txt); dp sbatch slurm_script.sh $i; done
+```
+
+## Example 3 - Using a singularity container
+
+```
+#!/bin/bash
+#SBATCH --partition=hour
+#SBATCH -c 2
+#SBATCH -e /home/test/logs/job.%J.err
+#SBATCH -o /home/test/logs/job.%J.out
+
+srun singularity run \ 
+--bind /workspaces/groups/rob-project-2:/workspaces/groups/rob-project-2 \
+~/audiowaveform.sif \
+audiowaveform --version
+```
+
+The srun line significes that we're going to run a singularity container in slurm. By default singularity can only access data in your home folder. However, you can use the --bind option to mount additional folders inside the container. This would be useful if, for example, the job needed to read or write data in the /workspaces/groups/rob-project-2 folder.
+
+The line `~/audiowaveform.sif` refers to the singularity image file. 
+
+The application here is audiowaveform
+
+#Viewing and managing your jobs
+
+You can use squeue to view ther status of jobs in the queue
+
+`squeue -l`
+
+While the job is running you can use scontrol to check its status:
+
+`scontrol show jobid <job_id>`
+
+You can use sinfo to check the sttaus of the cluster nodes:
+
+`sinfo -l`
+
+Other states you may see:
+
+- Alloc - this means the node is fully utilized by running jobs, so new jobs must wait in the queue
+- Drain - this means the node is unable to receive new jobs, either due to an error or scheduled maintenance
+
+Look at your own jobs in the queue:
+
+`squeue -u patrh5`
+
