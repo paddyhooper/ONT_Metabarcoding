@@ -98,22 +98,16 @@ You can download conda from https://docs.conda.io/en/latest/miniconda.html. Foll
 Let's use conda to install R
 
 ```
-{
 conda create -n r-environment r-essentials r-base
-}
 ```
 
 ```
-{
 conda activate r-environment
-}
 ```
 
 ```
-{
 which R
 R
-}
 ```
 
 ## Install software using a Singularity / Apptainer
@@ -135,7 +129,7 @@ Creat your singularity image file. It should end with file type .def:
 Open it with a text editor and construct your file:
 
 ```
-{ Bootstrap: docker
+Bootstrap: docker
 From: ubuntu:22:04
 
 %post
@@ -144,7 +138,6 @@ From: ubuntu:22:04
 
 %help
 	This is an Ubunter singularity with bwa and samtools installed.
-}
 ```
 
 The Bootstrap specifies using the ubuntu:22.04 image from the dockerhub container registry.  
