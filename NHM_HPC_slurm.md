@@ -51,7 +51,7 @@ Data is stored on the Valentine Filesystem A.K.A GPFS or Scale
 The following table describes the backup schedule for the different areas on Valentine.
 
 | Area | Backup Schedule |
-| --- | --------|
+| --- | ---|
 | Personal Workspace, Group Workspace, Instrument Folders | Every two days, Hourly snapshots for up to three days |
 | Shared Software Folder | Every two days, no snapshots |
 | Scratch space | Not backed up. Data is deleted automatically after 21 days |
