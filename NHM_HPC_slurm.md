@@ -29,20 +29,21 @@ There are three compute nodes:
 
 ## Personal workspace A.K.A Home Directory
 
-> When you log in you will be in your home directory, which is a personal area that only you have access to. You can save files and install software but the space is limited to 50GB.
->
->Therefore, we save important files in our group workspaces
+When you log in you will be in your home directory, which is a personal area that only you have access to. You can save files and install software but the space is limited to 50GB.
+
+Therefore, we save important files in our group workspaces.
 
 ## Group workspaces
 
-> Your work should ideally be kept in a group workspace. Group workspaces are located in /workspaces/groups and are organized by project. If you need a new group folder for a project you are working on, contact TS to request one. Access can also be granted to your colleagues, so group workspaces are ideal for collaboration. The default size limit is 2TB, but TS can increase this if necessary.
->
-> You can navigate to a group workspace via any of the following symlinks:
->/gpfs/nhmfsa/bulk/share/data/mbl/share/workspaces/groups/<folder_name>
+Your work should ideally be kept in a group workspace. Group workspaces are located in /workspaces/groups and are organized by project. If you need a new group folder for a project you are working on, contact TS to request one. Access can also be granted to your colleagues, so group workspaces are ideal for collaboration. The default size limit is 2TB, but TS can increase this if necessary.
+
+You can navigate to a group workspace via:
+
+`/gpfs/nhmfsa/bulk/share/data/mbl/share/workspaces/groups/<folder_name>
 
 ## Scratch Space
 
-> In some instances, your job may need to write files to disk temporarily while it's processing. You can use the /mbl/share/scratch folder for this. The advantage of using this folder is that it won't count towards your overall disk quota. Files in this folder are deleted automatically after 21 days. However, it's a good idea to delete them manually once you're done.
+In some instances, your job may need to write files to disk temporarily while it's processing. You can use the /mbl/share/scratch folder for this. The advantage of using this folder is that it won't count towards your overall disk quota. Files in this folder are deleted automatically after 21 days. However, it's a good idea to delete them manually once you're done.
 
 # Data Backups 
 
@@ -61,7 +62,6 @@ The following table describes the backup schedule for the different areas on Val
 `rsync <originfolder>/<filename> <username>@hpc-head-002:/<destination_folder>`
 
 `rsync /gpfs/nhmfsa/bulk/share/data/mbl/share/workspaces/groups/your_folder patrh5@hpc-head-002:/home/
-
 
 # How to install software
 
@@ -97,18 +97,11 @@ You can download conda from https://docs.conda.io/en/latest/miniconda.html. Foll
 
 Let's use conda to install R
 
-```
-conda create -n r-environment r-essentials r-base
-```
-
-```
-conda activate r-environment
-```
-
-```
-which R
-R
-```
+`conda create -n r-environment r-essentials r-base
+`conda activate r-environment
+`which R
+`R
+`
 
 ## Install software using a Singularity / Apptainer
 
@@ -254,6 +247,8 @@ First open Nano, a word editor, to write your script on the command line:
 
 > The first line of your script is always #!/bin/bash, this is called a **she-bang** and it specifies the start of a bash script.  The shell’s name is an acronym for Bourne-again shell. Bash can execute the vast majority of scripts and thus is widely used because it has more features, is well developed and better syntax.
 
+"#SBATCH" is a special directive to pass those lines through to sbatch (slurm)
+
 ```
 #!/bin/bash 
 #SBATCH -J job_title
@@ -375,11 +370,24 @@ Other states you may see:
 
 `squeue -u patrh5`
 
+# ALTERNATIVE, using sbatch in the [command line](https://www.youtube.com/watch?v=U42qlYkzP9k)
+
+As well as including sbatch in our scripts, we can also just run sbatch commands directly from the command line
+
+`batch -N -n1 --mem-per-cpu=100M -t00:05:00 hostname.sh
+
+100 mb of memory per cpu requested, for 5 minutes of walltime, with the job hostname.sh
+
+
 # Arraying Jobs in Slurm
 
 The more advanced way to use slurm is to array your jobs. When doing loads of repetitive sequential analysis, this is a more effienct approach than having individual ones.
 
 https://slurm.schedmd.com/job_array.html
+
+An array job consists of a series of tasks that can all be run in parallel but are completely independent of one another (eg compressing a set of files in a directory). All of the tasks of an array job are usually identical except for the data sets on which they operate.
+
+https://help.cropdiversity.ac.uk/slurm-overview.html lots of helpful info here
 
 # Snakemake
 

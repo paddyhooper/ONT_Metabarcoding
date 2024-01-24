@@ -52,7 +52,8 @@ P.p.s highlighting is with the equals sign, ==twice==.
 
 We use the greater than sign to signify a block quote. ***What's a block quote?***  
 
-> A blockquote is a long quotation, set on a new line and indented to create a separate block of text within your text file. (Like this one!)
+A blockquote is a long quotation, set on a new line and indented to create a separate block of text within your text file. (Like this one!)
+
 > Specify a new paragraph in a block quote by adding an empty arrow line
 >
 > Like this! 
