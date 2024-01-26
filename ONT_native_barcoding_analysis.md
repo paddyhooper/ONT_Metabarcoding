@@ -1275,7 +1275,7 @@ Once we have corrected our NHM config file, we can run the nextflow pipeline to 
 ### Input options
 
 Nextflow parameter name | Type | Description | Help | Default |
-|___ | ___ | ___ | ___ | ___ |
+|--- | --- | --- | --- | --- |
 |fastq|string|FASTQ files to analyze|This accepts one of three cases (i) path to the single FASTQ file, (ii) the path to a top-level directory containing FASTQ files, (iii) path to a directory containing one level of sub-directories which contain FASTQ files, in the first and second case, a sample name can be supplied with --sample, in the third case, the data is assumed to be multiplexed with the names of the sub-directories a barcodes. In this case a sample sheet can be provioded with --sample sheet | |
 |classifier|strig|Kraken" or Minimap2 workflow|Use Kraken2 for fast classification and minimap2 for finer resolution|minimap2|
 |analyse_unclassified|boolean|Analyse unclassified reads from input directory. By default the workflow will not process reads in the unclassified directory.|If selected and the input is a multiplex directory the workflow will also process the unclassified directory|False|
@@ -1285,7 +1285,7 @@ Nextflow parameter name | Type | Description | Help | Default |
 ### Sample Options
 
 Nextflow parameter name | Type | Description | Help | Default |
-|___ | ___ | ___ | ___ | ___ |
+|---| ---|---|---|---|
 | sample_sheet | string | A .csv file used to map barcodes to sample aliases. The sample sheet can be provided when the input data is a directory containing sub-directories with FASTQ files.| The sample sheet is a .csv file, with columns named barcode, sample_id, alias. Extra columns are allowed. A type column is required for certain workflows and should have the following values: test_sample, positive_control, negative_control, no_template_control.| |
 | sample | string| a single sample name for non-multiplexed data. Permissible if passing a single .fastq(.gz) file or directory of .fastq(.gz) files.|||
 
@@ -1298,7 +1298,7 @@ Here is how we specify the database we want to use for our analysis:
 *It looks like you have a database and a taxonomy, not quite sure!*
 
 Nextflow parameter name | Type | Description | Help | Default |
-| ___ | ___ | ___ | ___ | ___ |
+|---|---|---|---|---|
 | database_set | string | sets the reference, databases and taxonomy datasets that will be used for classifying reads. | This setting is overridable by providing an explicit taxonomy, database, or reference path **in the other reference options** | ncbi_16S_18S |
 | database | string | not required but can be used specifically override Kraken2 database, either with a .tar.gz file or Directory | By default uses database chosen in database_set parameter ||
 | taxonomy | string | not required but can be used to specifically override taxonomy database. Change the default to use a different taxonomy file, either .tar.gz or directory | By default NCBI taxonomy file will be downloaded and used. | |
@@ -1309,7 +1309,7 @@ Nextflow parameter name | Type | Description | Help | Default |
 ## Kraken2 Options
 
 Nextflow parameter name | Type | Description | Help | Default |
-| ___ | ___ | ___ | ___ | ___ |
+|---|---|---|---|---|
 |bracken_length | integer | set the length value for Bracken | Should be set to the length used to generate the kmer distribution file supplied in the Kraken database input directory. For the default datasets these will be set automatically. ncbi_16s_18s = 1000 , ncbi_16s_18s_28s_ITS = 1000 , PlusPF-8 = 300 | |
 |kracken2_memory_mapping | boolean | avoids loading database into RAM | Kraken 2 will by default load the database into process-local RAM; this flag will avoid doing so. It may be useful if the available RAM memory is lower than the size of the chosen database. | True |
 |include_kraken2_assignments|boolean|A per sample TSV file that indicates how each input sequence was classified as well as the taxon that has been assigned to each read. The TSV's will only be output on completion of the workflow||
@@ -1318,14 +1318,14 @@ Nextflow parameter name | Type | Description | Help | Default |
 ## Report Options
 
 Nextflow parameter name | Type | Description | Help | Default |
-| ___ | ___ | ___ | ___ | ___ |
+|---|---|---|---|---|
 | abundance_threshold | number | remove those taxa whose abundance is equal or lower than the chosen value | remove taxa with abundances lower than or equal to a relative value, use a decimal between 0-1. To remove taxa to an absolute value, use larger than 1 | 1 |
 | n_taxa_barplot | integer | number of most abundance taxa to be displayed in the barplot, the rest of the taxa will be grouped in "other" | |8|
 
 ## Advanced Options
 
 Nextflow parameter name | Type | Description | Help | Default |
-| ___ | ___ | ___ | ___ | ___ |
+|---|---|---|---|---|
 | min_len | integer | specify read length lower limit | any reads shorter than this will be removed | 800 |
 | min_read_qual | number | specify read quality lower limit | any reads with a quality lower than this limit will be not included |
 | max_len | integer | specify read length upper limit | any reads longer than this limit will not be included in the analysis | 2000 |
@@ -1334,7 +1334,7 @@ Nextflow parameter name | Type | Description | Help | Default |
 ## Outputs
 
 |Title | File path | Description|
-| ___ | ___ | ___ |
+|---|---|---|
 |Workflow report | ./wf-metagenomics-report.html | report for all samples |
 |Abundance table with counts per taxa | ./abundance_table_<taxonomic_rank>.tsv | Per-taxa counts TSV, including all samples |
 | [Bracken report file](https://github.com/jenniferlu717/Bracken#output-kraken-style-bracken-report) | ./bracken/<alias>,kraken2_bracken.report | TSV file with the abundance of each taxa. |
@@ -1409,6 +1409,151 @@ You can use the flag `include_kraken2_assignments` to include a per sample TSV f
 
 
 
+#Trying wf-16S for my data
+
+To start with I am going to try this approach on two of my 16S samples.
+
+I need a script that:
+
+1. Concatenates the barcode and applies an 'alias' sample name using a sample_sheet.csv
+2. Filters reads to remove anything 1000 < x < 2000  
+3. Removes adapters
+4. Uses the Kraken2 database for taxonomic analysis 
+
+
+trim barcodes was on, on the Minknow software, do i still need to trim adapters?
+
+
+
+
+```
+~/nextflow run epi2me-labs/wf-16s \
+--fastq nut_exp/16S/ont2/ \
+-c /mbl/share/workspaces/users/patrh5/PH_NHM.config \
+-profile genericcpuhour,singularity \
+--classifier kraken2 \
+--sample_sheet ~/nut_exp/my_data_test.csv \
+--database_set ncbi_16s_18s \
+--taxonomic_rank G \
+--include_kraken2_assignments true \
+--out_dir ~/nut_exp/test_output \
+--min_len 1000 \
+--max_len 2000 \
+--min_read_qual 9
+```
+Need to specify output file
+
+Let's try a simpler one:
+
+```
+~/nextflow run epi2me-labs/wf-16s \
+--fastq nut_exp/16S/ont2/ \
+-c /mbl/share/workspaces/users/patrh5/PH_NHM.config \
+-profile genericcpuhour,singularity \
+--sample_sheet ~/nut_exp/my_data_test.csv \
+--database_set ncbi_16s_18s
+```
+
+
+seems like issue might have been with Kraken
+
+For now let's just set off a screen containing all 16S with minimap to see what happens, we can always do other stuff in the mean time
+
+I think it would be best to do this with genericcpuday this time, as it might take a while.
+
+I am going to add the max and min length and min read quality requirements which might improve speed
+
+`screen -S 16S_minimap
+
+```
+~/nextflow run epi2me-labs/wf-16s \
+--fastq nut_exp/16S/ont2/ \
+-c /mbl/share/workspaces/users/patrh5/PH_NHM.config \
+-profile genericcpuday,singularity \
+--sample_sheet ~/nut_exp/16S_sample_sheet.csv \
+--database_set ncbi_16s_18s \
+--min_len 1000 \
+--max_len 2000 \
+--min_read_qual 9 
+
+```
+
+
+# 18S analysis for nutrient experiment
+Going to make sample sheets for the 18S samples, I made seperate sample sheets for each sample...
+
+18S ont1
+
+```
+~/nextflow run epi2me-labs/wf-16s \
+--fastq nut_exp/18S/ont1/ \
+-c /mbl/share/workspaces/users/patrh5/PH_NHM.config \
+-profile genericcpuday,singularity \
+--sample_sheet ~/nut_exp/18S_ont1_sample_sheet.csv \
+--database_set ncbi_16s_18s \
+--min_len 1000 \
+--max_len 2000 \
+--min_read_qual 9 \
+--out_dir nut_exp/18S_output/ont1_minimap
+```
+
+18S ont2
+
+```
+~/nextflow run epi2me-labs/wf-16s \
+--fastq nut_exp/18S/ont2/ \
+-c /mbl/share/workspaces/users/patrh5/PH_NHM.config \
+-profile genericcpuday,singularity \
+--sample_sheet ~/nut_exp/18S_ont2_sample_sheet.csv \
+--database_set ncbi_16s_18s \
+--min_len 1000 \
+--max_len 2000 \
+--min_read_qual 9 \
+--out_dir nut_exp/18S_output/ont2_minimap
+```
+
+Running all my samples with minimap
+
+The adapters have been removed, specific quality score set, and the analysis run for nutrient experiment
+
+Downsides - minimap2 not kraken, 18S database not ideal
+
+Output of minimap2 run:
+
+Look good, not a good coverage for protists, only fungi in 18S
+
+# Running wf-16S with Kraken2
+
+## Ont1 18S
+
+this didn't work - why??
+
+## Ont2 18S
+
+this didn't work - why??
+
+## 16S 
+
+```
+~/nextflow run epi2me-labs/wf-16s \
+--fastq nut_exp/16S/ont2/ \
+-c /mbl/share/workspaces/users/patrh5/PH_NHM.config \
+-profile genericcpuday,singularity \
+--sample_sheet ~/nut_exp/16S_sample_sheet.csv \
+--database_set SILVA_138_1 \
+--classifier kraken2 \
+--min_len 1000 \
+--max_len 2000 \
+--min_read_qual 9 \
+--out_dir nut_exp/16S_output/kraken2_silva138
+```
+
+# Running wf-16S with a custom database
+
+
+
+
+# Emu
 
 If i can't get Nextflow to work, i'm going to try Emu!
 
@@ -1421,5 +1566,19 @@ And transferred it to my home directory from my local PC:
 
 
 
-Work out EMU
-Work out what other papers did and compare that to Silvia's workflow
+
+# Base quality scores
+
+https://www.metagenomics.wiki/pdf/qc/phred-base-quality
+
+Quality value for each sequenced base
+The Phred score is a measure for base quality in DNA sequencing. The larger the Phred value, the better the quality of a sequenced base.
+
+|Phred|Error-rate|Accuracy|
+|---|---|---|
+|10|1 of 10|90%|# very low quality|
+|20|1 of 100|99%|# minimum quality for many tools|
+|30|1 of 1000|99.9%|# reasonable good quality|
+|40|1 of 10000|99.99%|# high quality|
+|50|1 of 100000|99.999%|# very high quality|
+
