@@ -584,7 +584,7 @@ Downloading Conda:
 
 Environments represent the infrastructure our computer is currently operating in. This includes like if certain variables exist and how they are set. 
 
-**Base environmnet**  
+**Base environment**  
 The "base" conda environment is the home base inside conda. We wouldn't want to install lots of complicated programs here, as the more things added, the more likely something is going to end up having a conflict. But the base environment is somehwere we might want to install simpler programmes we tend to use a lot. 
 
 **Making a new environment**  
