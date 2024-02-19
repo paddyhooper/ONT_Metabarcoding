@@ -1,5 +1,6 @@
 # Coding_Basics
- Here is where I keep information on best practices when it comes to coding.
+
+ Here is a directory of markdown files I wrote when I was learning how to use the Natural History Museum, London's HPC (NHM HPC). The files cover how to use the slurm job scheduler, how to install conda for downloading software and workflows for the analysis of Oxford Nanopore Technologies (ONT) sequencing data for full length 16S and 18S rRNA gene metabarcoding data.
 
 **Author:** Patrick M. Hooper  
 **Institution:** Natural History Museum, London

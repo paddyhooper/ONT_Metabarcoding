@@ -1,6 +1,14 @@
 # What is Markdown?
 
+This Markdown document was created by Patrick M. Hooper on 15/01/2024.
+
+# Preamble
+
 Markdown is a lightweight markup language that allows you to add formatting elements to plain text documents. This requires the use of notation to signify formatting. This allows you to include code in a document alongside plain text
+
+To write my markdown files, I use [notepad++](https://notepad-plus-plus.org/) for Windows. This basic text editor contains markdown language formatting which makes writing notes much easier. 
+
+I then upload my markdown files to my GitHub page and track changes through Git in the GitHub Desktop application. This system works for me for text documents as it means I can easily upload my files saved on my PC to GitHub which contains markdown implementation (i.e. formatting) so that I can read my markdown scripts in their formatted form (like you're doing right now)
 
 # Why should we use Markdown?
 
@@ -112,7 +120,6 @@ We can even add images by specifying file pathways
 
 Psst... this also works with URLs
 ![Find God](https://res.cloudinary.com/practicaldev/image/fetch/s--3OiNiqY7--/c_imagga_scale,f_auto,fl_progressive,h_420,q_auto,w_1000/https://dev-to-uploads.s3.amazonaws.com/i/kc1str971ujjedi3h32i.png)
-
 
 
 ## 8. More complex syntax

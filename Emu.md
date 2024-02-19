@@ -1,9 +1,9 @@
 # Using EMU to analyse 16S and 18S rRNA gene reads
 
 **References**
-[GitHub Page](https://gitlab.com/treangenlab/emu)
-[EMU paper](https://www.nature.com/articles/s41592-022-01520-4)
-[Description of the EMU model](https://www.youtube.com/watch?v=ySt5zIPEb10&t=54s)
+[Emu GitLab Page](https://gitlab.com/treangenlab/emu)
+[Emu paper](https://www.nature.com/articles/s41592-022-01520-4)
+[Description of the Emu EM model](https://www.youtube.com/watch?v=ySt5zIPEb10&t=54s)
 
 
 **The premise**
@@ -27,7 +27,7 @@
 
 ## Download the standard database - we need this for 16S
 
-Let's store these files in the group repository so they are available and as they are probably large files
+Let's store these files in the group repository (1) so they are available for other group members and (2) as they are large files
 
 1. Install osfclient for install of the Emu database
 
@@ -72,7 +72,7 @@ When I installed emu, it was installing minimap2-2.26
 
 # 2. Alternative Databases
 
-Our pre-built databases and files\scripts used to construct the databases are stored on OSF. You can download from our OSF UI or from the command line using osfclient. If downloading from the command line, first define the EMU_PREBUILT_DB variable.
+The Emu pre-built databases and files\scripts used to construct the databases are stored on OSF. You can download from the command line using osfclient. If downloading from the command line, first define the EMU_PREBUILT_DB variable.
 
 *Remember to do this in your base conda, not your emu-env as you haven't installed osf here*
 
@@ -91,22 +91,21 @@ The first step is to download the PR2 database from the [GitHub repository](http
 
 This should automatically download locally as a tar zip file, we therefore need to send this file to the HPC from your local server.
 
-1. Open PowerShell / cmd on your PC
+1. Open PowerShell / cmd on your local PC
 2. Type the following scp command, specifying the location of the tar file on your PC:
 
 `scp -J patrh5@orca.nhm.ac.uk C:/local/path/pr2_version_5.0.0_emu_db.tar.gz patrh5@hpc-head-002:/mbl/share/workspaces/groups/jungblutlab/Emu/
-3. Fill in your password and authenticator
-4. Unzip tar file:
+3. Fill in your password and authenticator for the orca and for the hpc server (it should be the same password)
+4. Back on the NHM HPC, unzip your file:
 
 `tar -xvf /mbl/share/workspaces/groups/jungblutlab/Emu/pr2_version_5.0.0_emu_db.tar.gz
-5. this makes a directory called emu_db, to avoid confusion, rename this directory
+5. This makes a directory called emu_db, to avoid confusion, rename this directory to `pr2_v5_emu_db`
 
 `mv emu_db pr2_v5_emu_db
 
 # 3. Quick review
 
 You should now have installed the standard EMU assignment database, the silva database, and the PR2 database in your desired location, in this case, the group workspace.
-
 
 # 4. Abundance estimation parameters
 
@@ -206,7 +205,13 @@ I need a script that:
 
 trim barcodes was on, on the Minknow software, do i still need to trim adapters?
 
-#FastQC
 
-#PoreChop
+#chopper
 
+Rust implementation of NanoFilt + NanoLyse, both written in Python. This tool is for the filtering and trimming of ONT or PacBIO fastqfiles.
+
+Filtering is done on an average read quality and minimal or maximal read length, and applying a head crop (start of read) and tailcrop (end of read). 
+
+ At the moment, it does not support filtering using a sequencing summary or filtering on GC content. 
+ 
+ 

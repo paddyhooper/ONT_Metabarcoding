@@ -1,5 +1,7 @@
 # Using the NHM HPC Server and slurm
 
+This Markdown document was created by Patrick M. Hooper on 16/01/2024.
+
 # What is the HPC cluster?
 
 The NHM's HPC (High Performance Computing) cluster is a group of servers on which you can run scientific analyses and computations.
@@ -374,7 +376,7 @@ Other states you may see:
 
 As well as including sbatch in our scripts, we can also just run sbatch commands directly from the command line
 
-`batch -N -n1 --mem-per-cpu=100M -t00:05:00 hostname.sh
+`sbatch -N -n1 --mem-per-cpu=100M -t00:05:00 hostname.sh
 
 100 mb of memory per cpu requested, for 5 minutes of walltime, with the job hostname.sh
 

@@ -1,10 +1,8 @@
 # Organising ONT sequencing run
 
-This document covers the preparation of my samples directly from the MinKNOW software.
-
-During sequencing, the MinKNOW completed ultra high accuracy basecalling and barcoding of the samples, meaning the samples are separated into individual barcode files.
-
-The sequencing process further separates the individual barcode files into smaller subfolders containing 1000 fastq read files. 
+- This document covers the preparation of my samples directly from the MinKNOW software.
+- During sequencing, the MinKNOW completed ultra high accuracy basecalling and barcoding of the samples, meaning the samples are separated into individual barcode files.
+- The sequencing process further separates the individual barcode files into smaller subfolders containing 1000 fastq read files. 
 
 ## Outputs from an ONT sequencing run
 
@@ -35,7 +33,6 @@ The fast5 or pod5 files are your sequenced reads before they are barcoded.
 
 The fastq files are the ones we use going forward (if we're happy with the barcoding job that MinKNOW did).
 
-
 ## Objectives
 
 1. Make directory in your home directory containing the 
@@ -43,10 +40,9 @@ Barcode files need to be renamed by sample
 2. Rename your files with sample ID using a reference file
 3. Move all fastq files into one folder for each sample
 4. Filter out short reads from our files
-5. Trim the ONT adapters off
-6. Mask low-complexity regions?
-7. Perform taxonomic classification
-8. Generate a Krona plot of taxonomy in your samples
+5. Mask low-complexity regions?
+6. Perform taxonomic classification
+7. Generate a Krona plot of taxonomy in your samples
 
 ## 1. Make a directory for my two sample sets
 Login to your home directory on HPC-HEAD-002 through PuTTY and make two directories for your two projects called *ward_hunt_18* and *nut_exp*
@@ -58,11 +54,9 @@ Login to your home directory on HPC-HEAD-002 through PuTTY and make two director
 
 **Within each folder I also need to make a sub-folder for the two sequencing runs, as at the moment, the barcodes could still get mixed up until they're renamed.**
 
-You should now have two directories in your home folder
-
-We then need to transfer the required samples into each folder. We can do this using the command line.
-
-First, I had to make a metadata file for each project in Excel and upload these to my server. These metadata files are *wh_18S_metadata* and *nut_exp_metadata*.
+- You should now have two directories in your home folder
+- We then need to transfer the required samples into each folder. We can do this using the command line.
+- First, I had to make a metadata file for each project in Excel and upload these to my server. These metadata files are *wh_18S_metadata* and *nut_exp_metadata*.
 
 The metadata file contains the ID, sample ID, location, sample type, ont_run, ont_barcode, fmol, read_depth, temp, pH, conductivity, and sampling date
 
@@ -251,46 +245,26 @@ wh_18S/ont2 = 24 samples
 
 ***The nice thing about scripts is I can basically just copy the one above :)***
 
-#### Script 1 - nut_exp_ont1
+#### Script to concatenate all nutrient experiment samples
 
-`nano combine_fastqs_nut_exp_ont1.sh
+`nano cat_fastqs_nut_exp.sh
 
 ```
-#!/bin/bash 
+
+#!/bin/bash
 #SBATCH -J combine_fastqs_nut_exp_ont1
 #SBATCH -p hour
 
 cat ~/nut_exp/18S/ont1/barcode10/*.fastq.gz >> ~/nut_exp/single_fastq_barcodes/W_TZ3_18S.fastq.gz
-
 cat ~/nut_exp/18S/ont1/barcode11/*.fastq.gz >> ~/nut_exp/single_fastq_barcodes/W_TZ2_18S.fastq.gz
-
 cat ~/nut_exp/18S/ont1/barcode12/*.fastq.gz >> ~/nut_exp/single_fastq_barcodes/W_TZ1_18S.fastq.gz
-
 cat ~/nut_exp/18S/ont1/barcode49/*.fastq.gz >> ~/nut_exp/single_fastq_barcodes/M_TZ1_18S.fastq.gz
-
 cat ~/nut_exp/18S/ont1/barcode61/*.fastq.gz >> ~/nut_exp/single_fastq_barcodes/M_TZ4_18S.fastq.gz
-
 cat ~/nut_exp/18S/ont1/barcode62/*.fastq.gz >> ~/nut_exp/single_fastq_barcodes/M_TZ3_18S.fastq.gz
-
 cat ~/nut_exp/18S/ont1/barcode64/*.fastq.gz >> ~/nut_exp/single_fastq_barcodes/M_TZ2_18S.fastq.gz
-
 cat ~/nut_exp/18S/ont1/barcode89/*.fastq.gz >> ~/nut_exp/single_fastq_barcodes/NC_18S.fastq.gz
 
-echo "single file barcodes created!"
-```
-
-Run the script:
-
-`bash combine_fastqs_nut_exp_ont.sh
-
-#### Script 2 - nut_exp_ont2_16S
-
-`nano combine_fastqs_nut_exp_ont2_16S.sh
-
-```
-#!/bin/bash 
-#SBATCH -J combine_fastqs_nut_exp_ont2_16S
-#SBATCH -p hour
+echo "ont1 18S created"
 
 cat ~/nut_exp/16S/ont2/barcode01/*.fastq.gz >> ~/nut_exp/single_fastq_barcodes/M_N4_16S.fastq.gz
 cat ~/nut_exp/16S/ont2/barcode02/*.fastq.gz >> ~/nut_exp/single_fastq_barcodes/M_N3_16S.fastq.gz
@@ -333,20 +307,7 @@ cat ~/nut_exp/16S/ont2/barcode38/*.fastq.gz >> ~/nut_exp/single_fastq_barcodes/M
 cat ~/nut_exp/16S/ont2/barcode39/*.fastq.gz >> ~/nut_exp/single_fastq_barcodes/M_TZ2_16S.fastq.gz
 cat ~/nut_exp/16S/ont2/barcode40/*.fastq.gz >> ~/nut_exp/single_fastq_barcodes/M_TZ1_16S.fastq.gz
 
-echo "single file barcodes created!"
-```
-Run the script:
-
-`bash combine_fastqs_nut_exp_ont2_16S.sh
-
-#### Script 3 - nut_exp_ont2_18S
-
-`nano combine_fastqs_nut_exp_ont2_18S.sh
-
-```
-#!/bin/bash 
-#SBATCH -J combine_fastqs_nut_exp_ont2_18S
-#SBATCH -p hour
+echo "ont2 16S created"
 
 cat ~/nut_exp/18S/ont2/barcode41/*.fastq.gz >> ~/nut_exp/single_fastq_barcodes/M_N4_18S.fastq.gz
 cat ~/nut_exp/18S/ont2/barcode42/*.fastq.gz >> ~/nut_exp/single_fastq_barcodes/M_N3_18S.fastq.gz
@@ -382,17 +343,19 @@ cat ~/nut_exp/18S/ont2/barcode71/*.fastq.gz >> ~/nut_exp/single_fastq_barcodes/W
 cat ~/nut_exp/18S/ont2/barcode72/*.fastq.gz >> ~/nut_exp/single_fastq_barcodes/W_P1_18S.fastq.gz
 cat ~/nut_exp/18S/ont2/barcode93/*.fastq.gz >> ~/nut_exp/single_fastq_barcodes/M_TZ1_18Sb.fastq.gz
 
-echo "single file barcodes created!"
+echo "ont2 18S created"
+
 ```
+
 
 Run the script:
 
 `bash combine_fastqs_nut_exp_ont2_18S.sh
 
-#### Script 4 - wh_18S_ont1
+#### Script 2 - wh_18S
 
 `mkdir ~/wh_18S/single_fastq_barcodes
-`nano combine_fastqs_wh_18S_ont1.sh
+`nano ~/wh_18S/combine_fastqs_wh_18S.sh
 
 ```
 #!/bin/bash 
@@ -496,21 +459,7 @@ cat ~/wh_18S/ont1/barcode94/*.fastq.gz >> ~/wh_18S/single_fastq_barcodes/WT2_S1.
 cat ~/wh_18S/ont1/barcode95/*.fastq.gz >> ~/wh_18S/single_fastq_barcodes/WT3_C5.fastq.gz
 cat ~/wh_18S/ont1/barcode96/*.fastq.gz >> ~/wh_18S/single_fastq_barcodes/WT3_C4.fastq.gz
 
-echo "single file barcodes created!"
-```
-
-Run the script:
-
-`bash combine_fastqs_wh_18S_ont1.sh
-
-#### Script 5 - wh_18S_ont2
-
-`nano combine_fastqs_wh_18S_ont2.sh
-
-```
-#!/bin/bash 
-#SBATCH -J combine_fastqs_wh_18S_ont2
-#SBATCH -p hour
+echo "single file barcodes created for ont1!"
 
 cat ~/wh_18S/ont2/barcode73/*.fastq.gz >> ~/wh_18S/single_fastq_barcodes/WT2_S3.fastq.gz
 cat ~/wh_18S/ont2/barcode74/*.fastq.gz >> ~/wh_18S/single_fastq_barcodes/WT2_S2.fastq.gz
@@ -537,7 +486,7 @@ cat ~/wh_18S/ont2/barcode94/*.fastq.gz >> ~/wh_18S/single_fastq_barcodes/WH_M2b.
 cat ~/wh_18S/ont2/barcode95/*.fastq.gz >> ~/wh_18S/single_fastq_barcodes/WH_M1b.fastq.gz
 cat ~/wh_18S/ont2/barcode96/*.fastq.gz >> ~/wh_18S/single_fastq_barcodes/WHIS_M3b.fastq.gz
 
-echo "single file barcodes created!"
+echo "single file barcodes created for ont2!"
 ```
 
 Run the script:
@@ -805,7 +754,7 @@ Remember to do this in an environment within your r-env, i.e. maybe make a new e
 next step - decide what to do with my data!
 
 
-## Quality control
+## Scratch folder
 
 For larger processing steps it can be advantageous to make a temp directory in the scratch space. Here we make a temp directory for our commands we submit in our job scripts "paddy"
 
@@ -814,30 +763,8 @@ For larger processing steps it can be advantageous to make a temp directory in t
 
 https://help.cropdiversity.ac.uk/slurm-overview.html 
 
-Let's come back to that...
 
-Now let's work out what to do!!
-
-Maria is re-high accuracy version using dorado instead of guppy
-Use a GPU on the HPC rather than a CPU
-
-
-Nanostat - quality check data
-PoreChop for removing barcodes
-Nanoplot 
-
-Nanopore already does pass and fail, in illumina we have to do that in s 
-QC 
-Remove barcodes
-apply length filtering to my reads  - remove chimeras as much as possible - seqtk - https://github.com/lh3/seqtk or https://bioinf.shenwei.me/seqkit/ 
-loop through your files and run it on everything 
-
-map anything to human reads and remove them
-remove frog host reference genome
-
-
-
-#EPI2ME Labs wf-16S
+# EPI2ME Labs wf-16S
 
 [GitHub page](https://github.com/epi2me-labs/wf-16s/tree/master?tab=readme-ov-file#FAQs)
 
@@ -972,7 +899,7 @@ When running any of these piplines on the NHM HPC, you must include the NHM conf
 
 This is included in all of the example commands for the pipelines. 
 
-The config file creates a set of default parameters that instruct the pipeline to dispatch all jobs to a specific slurm queue. Briefly, this config uses the `genericcpuhour` profile, dispatching jobs to the CPU nodes on the hour queue. If your dataset is large and the pipeline needs mroe time, ,you can change to the day, week or month by just swapping out `genericcpuhour` for `genericcpuday`, etc.
+The config file creates a set of default parameters that instruct the pipeline to dispatch all jobs to a specific slurm queue. Briefly, this config uses the `genericcpuhour` profile, dispatching jobs to the CPU nodes on the hour queue. If your dataset is large and the pipeline needs more time, ,you can change to the day, week or month by just swapping out `genericcpuhour` for `genericcpuday`, etc.
 
 In the ampliseq workflow, they run their nextflow command with the `-profile` parameter: 
 
@@ -1130,9 +1057,7 @@ Caused by:
 This time, I copied the 'NHM.config' to my home directory and edited the file in nano. Not neat code but just wanted to be safe.
 
 ```
-mv /mbl/share/workspaces/groups/nextflow/NHM.config ~
-cd
-ls
+cp /mbl/share/workspaces/groups/nextflow/NHM.config ~
 mv NHM.config PH_NHM.config
 ```
 
@@ -1388,7 +1313,7 @@ How to select the correct databases:
 https://labs.epi2me.io/metagenomic-databases/
 
 
-4. Prepare output
+## 4. Prepare output
 
 The main output of the wf-16S pipeline is the `wf-16s-report.html`. Which can be found in the output directory. It contains a summary of read statistics, the taxonomic composition of the sample and some diversity metrics. The results shown in the report also can be customized, with the report option arguments listed above.
 
