@@ -396,3 +396,21 @@ https://help.cropdiversity.ac.uk/slurm-overview.html lots of helpful info here
 A python inspired workflow / pipeline management system to create reproducible and scalable data, creating contained environments that you can later deploy and execute in systems with different configurations 
 
 https://snakemake.readthedocs.io/en/stable/
+
+# Adding colour highlighting to your terminal
+
+If you previously used the old HPC cluster (hpc-jobs-001) you may find that on the new cluster your terminal is black and white, without any coloured highlighting. This is because the hidden files .bashrc and .bash_profile in your home folder are designed to work with Centos rather than Ubuntu. 
+
+To resolve this, type the following commands in your home directory:
+
+```
+cd ~
+mkdir ~/OLD
+mv ~/.bashrc ~/OLD
+mv ~/.bash_profile ~/OLD
+cp /etc/skel/.profile ~
+cp /etc/skel/.bashrc ~
+```
+
+Log out with`exit` and log in and the colours should have been applied to your command line.
+

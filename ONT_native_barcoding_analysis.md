@@ -15,7 +15,7 @@ This document provides the process I used for analysis of my raw ONT data. The d
 
 Firstly, this markdown document assumes you have copied your ONT sequencing run from the NHM GridION onto your group directory on the HPC. For the jungblut group this is /mbl/share/workspaces/groups/jungblutlab/
 
-***Very Important Sidenote ***
+***Very Important Sidenote***
 *I copied my sequencing data into the jungblutlab from the GridION using scp into my folder 'Paddy_Nanopore'. Within this, you can then find the two sequencing runs, ONT_1_18S (which contains the 18S data for the environmental microbiomes chapter (except soil, deep mats and WHIS)) and ONT_2 (which contains the nutrient experiment data, soil, deep mat biofilms, and WHIS1).*
 
 ***These folders should never be modified!!***
@@ -1439,19 +1439,218 @@ Specified rank must be in this list and in each of the included Emu outputs. Com
 
 `emu combine-outputs <directory_path> <rank>
 
-### Additional parameters:
+# 10. Using Emu for my project data
+
+## Pre-requisites
+1. As the databases are communal, you need to specify the true directory to the different Emu databases in the 'jungblutlab' shared group workspace, with the `--db` argument
+2. Your reads will be in your home directory, so you want to run them using their absolute pathway. In our case we will be using our filtered versions of our samples in our `chopper_output` directory.
+3. You need to be in the emu-env conda environment we created to run the emu command, `conda activate emu-env`
+
+##Test Emu on one sample
+
+`mkdir /home/patrh5/nut_exp/emu_output/
+
+Let's make our job script for sbatch submission:
+`nano /home/patrh5/nut_exp/scripts/emu_test.sh
+
+Copy in this script code:
+
+```
+#!/bin/bash
+#SBATCH -J emu_test
+#SBATCH -p hour
+#SBATCH --output="/home/patrh5/logs/emu_test_out.txt"
+
+# Initialize Conda
+source /home/patrh5/miniconda3/etc/profile.d/conda.sh
+
+# Activate the Conda environment where Emu is installed
+conda activate emu-env
+
+# Run the Emu command
+emu abundance /home/patrh5/nut_exp/chopper_output/M_C1_16S_filt.fastq.gz --db /mbl/share/workspaces/groups/jungblutlab/Emu/standard_db --output-dir /home/patrh5/nut_exp/emu_output/
+
+# We will use default parameters for:
+# --type, as we are using ONT data
+# --min-abundance, which is set to 0.0001 or 0.01%
+# --N, which is the max number of alignments utilized for each read in minimap2, set as default to 50
+# --k, which is the minibatch size for mapping in minimap
+# --output-basename which default is set to stem of input files
+# --threads, we will use the default of 3
+```
+
+Run this script with 
+`sbatch /home/patrh5/nut_exp/scripts/emu_test.sh
+
+##Output from Emu with 16S data
+This is very exciting, the command took around 4 hours but it did produce two abundance tables, one capped at 0.001% abundance and the other total abundance data. 
+
+File output: `M_C1_16S_filt.fastq_rel-abundance-threshold-0.0001.tsv` and   `M_C1_16S_filt.fastq_rel-abundance.tsv`
+
+##Scale up 16S analysis to all samples
+
+As this command is quite slow, I am looking at ways to increase the processing speed. Two options are multithreading and array job submission
+
+### Multithreading
+Multithreading is a technique in computer programming where a single process contains multiple threads that can run concurrently. This allows for parallel execution of tasks within a single process, which can lead to increased efficiency and performance, particularly on systems with multiple CPU cores.
+
+In the context of your emu abundance command, the --threads option allows you to specify the number of threads that the command should use for its computations. If your system has multiple CPU cores, using more than one thread can potentially speed up the command by allowing it to perform multiple computations at the same time.
+
+The `nproc` command is a Linux command that prints the number of processing units (CPU cores) available to the current process, which may be less than the number of cores on the machine. This command is useful when you want to determine the number of cores available for multithreading.
+
+We could therefore use it in our script by adding a variable argument, like this:
+`num_cores=$(nproc)
+
+We could then use the $num_cores variable in our --thread argument for our emu command to support maximum multithreading based on what is currently available in the server.
+
+`emu abundance --threads $num_cores
+
+###Array job submission
+Array job submission is a feature provided by many job schedulers, including SLURM, that allows you to submit a series of similar jobs all at once.
+
+When you submit an array job, you specify a range of indices, and the job scheduler creates a separate job for each index in the range. Each of these jobs is identical except for the value of a special environment variable (for example, $SLURM_ARRAY_TASK_ID in SLURM) that is set to the index of the job in the array.
+
+Array jobs are useful when you have a large number of similar tasks to run that are independent of each other. For example, you might use an array job to process a large number of files, with each job in the array processing one file.
+
+Here's an example of how you might submit an array job in SLURM:
+`#SBATCH --array=1-100
+
+In this example, SLURM would create 100 jobs, with the $SLURM_ARRAY_TASK_ID variable set to a different value between 1 and 100 for each job.
+
+I think I could use this in my script to save having to run my jobs separately however I am concerned I might use up a lot of space on the HPC.
+
+##Script for 16S annotation using Emu
+Let's make a directory in our logs folder first specifically for our Emu output
+`mkdir /home/patrh5/logs/emu/ /home/patrh5/logs/emu/16S
+
+Let's count how many 16S files we have...
+`ls /home/patrh5/nut_exp/chopper_output/*16S_filt.fastq.gz | wc 
+
+Let's make our array script in our nutrient experiment scripts folder
+`nano /home/patrh5/nut_exp/scripts/array_emu_16S.sh
+
+Copy in the script file:
+
+```
+#!/bin/bash
+#SBATCH -J emu_16S
+#SBATCH -p day
+#SBATCH --output="/home/patrh5/logs/emu/16S/emu_16S_%A_%a.txt"
+#SBATCH --array=1-40
+
+# Initialize Conda
+source /home/patrh5/miniconda3/etc/profile.d/conda.sh
+
+# Activate the Conda environment where Emu is installed
+conda activate emu-env
+
+# Define the directory containing the .fastq.gz files
+input_dir=/home/patrh5/nut_exp/chopper_output
+
+# Get the name of the input file based on the array index
+file=$(ls "$input_dir"/*16S_filt.fastq.gz | sed -n "${SLURM_ARRAY_TASK_ID}p")
+
+# Get the number of CPU cores
+num_cores=$(nproc)
+
+# Run the Emu command with the --threads option
+emu abundance "$file" --db /mbl/share/workspaces/groups/jungblutlab/Emu/standard_db --output-dir /home/patrh5/nut_exp/emu_output/ --threads $num_cores
+
+##What is the script doing?
+#1. #!/bin/bash: This line tells the system that this script should be run with the Bash shell.
+#2. #SBATCH -J emu_16S: This line sets the job name to "emu_16S".
+#3. #SBATCH -p day: This line sets the partition to "day".
+#4. #SBATCH --output="/home/patrh5/logs/emu/16S/emu_16S_%A_%a.txt": This line sets the output file for each job in the array. The %A and %a are replaced with the job array ID and the array index, respectively.
+#5. #SBATCH --array=1-40: This line creates an array of 40 jobs.
+#6. source /home/patrh5/miniconda3/etc/profile.d/conda.sh: This line initializes Conda.
+#7. conda activate emu-env: This line activates the Conda environment where Emu is installed.
+#8. input_dir=/home/patrh5/nut_exp/chopper_output: This line defines the directory containing the .fastq.gz files.
+#9. file=$(ls "$input_dir"/*16S_filt.fastq.gz | sed -n "${SLURM_ARRAY_TASK_ID}p"): This line gets the name of the input file based on the array index. This command pipes the output of the ls command to sed, a stream editor. The -n option tells sed not to print anything by default. The "${SLURM_ARRAY_TASK_ID}p" command tells sed to print the line number that matches the current array job index. So if SLURM_ARRAY_TASK_ID is 1, sed prints the first line; if SLURM_ARRAY_TASK_ID is 2, sed prints the second line, and so on.
+#10. num_cores=$(nproc): This line gets the number of CPU cores.
+#11. emu abundance "$file" --db /mbl/share/workspaces/groups/jungblutlab/Emu/standard_db --output-dir /home/patrh5/nut_exp/emu_output/ --threads $num_cores: This line runs the emu abundance command on the input file using all available CPU cores.
+
+```
+
+Save and exit nano, and then submit a job with this .sh file
+
+`sbatch /home/patrh5/nut_exp/scripts/array_emu_16S.sh
+
+This is currently waiting to start
+
+##Script for 18S annotation using PR2 with Emu
+
+This time we are going to specify the [PR2 database](https://gitlab.com/treangenlab/emu/-/issues/49) for analysis of our 18S reads in the nutrient experiment.
+
+Let's make a directory in our logs folder first specifically for our 18S Emu output
+`mkdir /home/patrh5/logs/emu/18S
+
+Let's count how many 18S files we have... it should be 40
+`ls /home/patrh5/nut_exp/chopper_output/*18S_filt.fastq.gz | wc 
+
+Annoyingly I also made a file called `M_TZ1_18Sb_filt.fastq.gz` as I had two runs of this sample across the two sequencing runs, for ease, let's rename this file:
+
+`mv /home/patrh5/nut_exp/chopper_output/M_TZ1_18Sb_filt.fastq.gz /home/patrh5/nut_exp/chopper_output/M_TZ1_b18S_filt.fastq.gz
+
+Now let's recount how many 18S files, we should now have 41...
+
+`ls /home/patrh5/nut_exp/chopper_output/*18S_filt.fastq.gz | wc 
+... we did!
+
+Okay so now we will need to change our script for the 18S to include 41 arrays...
+
+Let's make our array script in our nutrient experiment scripts folder
+`nano /home/patrh5/nut_exp/scripts/array_emu_18S.sh
+
+Copy in the script file:
+
+```
+#!/bin/bash
+#SBATCH -J emu_18S
+#SBATCH -p day
+#SBATCH --output="/home/patrh5/logs/emu/18S/emu_18S_%A_%a.txt"
+#SBATCH --array=1-41
+
+# Initialize Conda
+source /home/patrh5/miniconda3/etc/profile.d/conda.sh
+
+# Activate the Conda environment where Emu is installed
+conda activate emu-env
+
+# Define the directory containing the .fastq.gz files
+input_dir=/home/patrh5/nut_exp/chopper_output
+
+# Get the name of the input file based on the array index
+file=$(ls "$input_dir"/*18S_filt.fastq.gz | sed -n "${SLURM_ARRAY_TASK_ID}p")
+
+# Get the number of CPU cores
+num_cores=$(nproc)
+
+# Run the Emu command with the --threads option
+emu abundance "$file" --db /mbl/share/workspaces/groups/jungblutlab/Emu/standard_db --output-dir /home/patrh5/nut_exp/emu_output/ --threads $num_cores
+
+```
+
+Run this command using sbatch:
+`sbatch /home/patrh5/nut_exp/scripts/array_emu_18S.sh
+
+##Let's review our output...
+
+
+##I think to be able to create my total relative abundance table I use the `combine-outputs` positional argument
+
+- The combine-outputs function can be used to create a single table containing all Emu output relative abundances in a single directory.
+- Note this function will select all the .tsv files in the provided directory that contain 'rel-abundance' in the filename.
+- Combined table will only include all ranks above the specified rank according to this list:
+[tax_id, species, genus, family, order, class, phylum, superkingdom]. 
+- Specified rank must be in this list and in each of the included Emu outputs. 
+- Combined table will be created in the provided directory path with the file name: emu-combined-<rank>.tsv. In order to include tax_id in your output, specific <rank> as "tax_id".
+
+Additional parameters:
 
 | Command | Description |
 | --- | --- |
 | --split-tables | output 2 tables: (1) abundances only at specified rank and (2) taxonomic lineages down to specified rank |
 | --counts | output estimated counts rather than relative abundance percentage in combined table. Only includes Emu relative abundance outputs that already have 'estimated counts' |
-
-# 10. Using Emu for my project data
-
-## Pre-requisites
-1. As the databases are communal, you need to specify the true directory to the different Emu databases in the 'jungblutlab' shared group workspace, with the `--db` argument
-2. Your reads will be in your home directory, so you want to run them using their absolute pathway.
-3. You need to be in the emu-env conda environment we created to run the emu command, `conda activate emu-env`
 ___
 
 # Appendix
