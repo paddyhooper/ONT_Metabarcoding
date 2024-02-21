@@ -13,7 +13,7 @@ This document provides the process I used for analysis of my raw ONT data. The d
 
 ## Assumptions
 
-Firstly, this markdown document assumes you have copied your ONT sequencing run from the NHM GridION onto your group directory on the HPC. For the jungblut group this is /mbl/share/workspaces/groups/jungblutlab/
+Firstly, this markdown document assumes you have copied your ONT sequencing run from the NHM GridION onto your group directory on the HPC. For the jungblut group this is: `/mbl/share/workspaces/groups/jungblutlab/`
 
 ***Very Important Sidenote***
 *I copied my sequencing data into the jungblutlab from the GridION using scp into my folder 'Paddy_Nanopore'. Within this, you can then find the two sequencing runs, ONT_1_18S (which contains the 18S data for the environmental microbiomes chapter (except soil, deep mats and WHIS)) and ONT_2 (which contains the nutrient experiment data, soil, deep mat biofilms, and WHIS1).*
@@ -22,7 +22,7 @@ Firstly, this markdown document assumes you have copied your ONT sequencing run 
 
 Secondly, it is worthwile making a metadata file for your samples now for correct renaming of your ONT barcodes (i.e. barcode01-barcode96) to your sample name (e.g. WHL_M1).
 
-Thirdly, this markdown document mainly uses SBATCH scripts designed for submitting jobs to the NHM HPC servers. If you are unfamiliar with the NHM HPC, please read 'NHM_HPC_slurm.md'.
+Thirdly, this markdown document mainly uses SBATCH scripts designed for submitting jobs to the NHM HPC servers. If you are unfamiliar with the NHM HPC, please read Robert Foster's user guide and/or my personal version: 'NHM_HPC_slurm.md'
 
 Fourthly, you will want to use ['screen'](https://linuxize.com/post/how-to-use-linux-screen/) for some of your bigger processing steps, this gives you the possibility of making a separate temporary terminal which you can then 'attach' and 'detach' from, meaning you can send a command, detach, and close your terminal, all while the command still runs in your screen. When you think it's done, you just re-attach to the screen to continue working. 
 
@@ -117,9 +117,8 @@ echo "ont1_concat.fastq.gz created"
 zcat ~/ont2_fastq/fastq_pass/barcode*/*.fastq.gz | gzip > ~/ont2_fastq/ont2_concat.fastq.gz
 echo "ont2_concat.fastq.gz created"
 
+#Note: We are using zcat here instead of cat. If you concatenate gzip files using cat, you'll end up with multiple headers and footers in the resulting file, which will cause problems when you try to decompress or read the file. Therefore, we use zcat to decompress the data to standard output and then pipe that output to gzip to compress it again into a single file*
 ```
-
-*Note: We are using zcat here instead of cat. If you concatenate gzip files using cat, you'll end up with multiple headers and footers in the resulting file, which will cause problems when you try to decompress or read the file. Therefore, we use zcat to decompress the data to standard output and then pipe that output to gzip to compress it again into a single file*
 
 To runt this jobs we need to send them to the HPC servers using the `sbatch` command. 
 
@@ -142,18 +141,19 @@ Let's make a folder for each project
 ## Nutrient Experiment Samples
 For each barcode folder, we want to combine all the sub-folders into one single fastq.gz file and rename that file with the correct sample ID. Let's make a script to do this for the nutrient experiment samples first.
 
-`mkdir ~/nut_exp/scripts
-`nano ~/nut_exp/scripts/single_fastq_barcodes.sh
+`mkdir /home/patrh5/nut_exp/scripts
+`nano /home/patrh5/nut_exp/scripts/single_fastq_barcodes.sh
 
 This should open a basic text editor, copy the below script into the file you have just opened. We use right hand click to paste.
 
-*Note: The #SBATCH commands are used here to give information to the job scheduler. Here I am using 4 arguments:
-*-J = assign a job name
-*-p = submit the job to the 'hour' division within slurm, day, week, etc. also available
-*--error = send any error messages to a text file as defined by the user
-*--output = send my output to a specifically named file of your choice, otherwise it just writes a '.out' file named after the slurm job which quickly gets hard to keep track of.
+Note: The #SBATCH commands are used here to give information to the job scheduler. Here I am using 4 arguments:
+`#!/bin/bash` = for some reason this is called a shebang, and it signifies a bash script to the slurm job scheduler
+`-J` = assign a job name
+`-p` = submit the job to the 'hour' division within slurm, day, week, etc. also available
+`--error` = send any error messages to a text file as defined by the user
+`--output` = send my output to a specifically named file of your choice, otherwise it just writes a '.out' file named after the slurm job which quickly gets hard to keep track of.
 
-*Note how for the error and output arguments I am writing the absolute directory, it doesn't work when you use '~' for your home directory 
+Note: For the `--error` and `--output` arguments I am writing the absolute directory, it doesn't work when you use '~' for your home directory 
 
 ```
 #!/bin/bash
@@ -252,6 +252,9 @@ zcat /home/patrh5/nut_exp/18S/ont2/barcode93/*.fastq.gz | gzip > /home/patrh5/nu
 
 echo "ont2 18S created"
 ```
+
+We then save and exit the nano script and submit the job with:
+`sbatch /home/patrh5//nut_exp/scripts/single_fastq_barcodes.sh
 
 ## Ward Hunt Environmental Biomes Samples
 
@@ -399,7 +402,7 @@ echo "single file barcodes created from ont2!"
 
 To submit these jobs we need to send them to the HPC servers using the `sbatch` command. 
 
-`sbatch ~/nut_exp/scripts/single_fastq_barcodes.sh
+`sbatch ~/wh_18S/scripts/single_fastq_barcodes.sh
 `sbatch ~/wh_18S/scripts/single_fastq_barcodes.sh
 
 ___
@@ -426,7 +429,7 @@ conda list
 #conda list should now show all the packages in our nanopack-env which should include 'nanoplot' and python
 ```
 
-NanoPlot will produce:
+**NanoPlot output:**
 1. Statistical summary of our sequence data
 2. Plots of read length, quality, etc.
 3. A html summary file that contains all output results (similar to Epi2me without the analysis)
@@ -602,7 +605,7 @@ echo "18S file completed"
 ```
 
 run the script:
-`sbatch /home/patrh5/nut_exp/scripts/concat_raw_16S_18S_fastqs.sh
+`sbatch /home/patrh5/wh_18S/scripts/concat_raw_16S_18S_fastqs.sh
 
 ## NanoPlot analysis of my raw project data
 
@@ -684,7 +687,7 @@ NanoPlot --fastq_rich /home/patrh5/wh_18S/single_fastq_barcodes/NC.fastq.gz --ve
 
 Run with:
 
-`sbatch /home/patrh5/nut_exp/scripts/nanoplot_raw_data.sh
+`sbatch /home/patrh5/wh_18S/scripts/nanoplot_raw_data.sh
 
 ___
 
@@ -1021,7 +1024,7 @@ NanoPlot --fastq_rich /home/patrh5/wh_18S/concat_fastqs/concat_porechop.fastq.gz
 ```
 
 Save, close, and then run the script:
-`sbatch /home/patrh5/nut_exp/scripts/plotting_porechop.sh
+`sbatch /home/patrh5/wh_18S/scripts/plotting_porechop.sh
 
 ** Analysis of PoreChop approach **
 
@@ -1190,7 +1193,7 @@ ___
 
 Once we have run these pre-processing steps we will concatenate our samples one more time and look at the impact our filtering has had on our samples.
 
-** Nutrient Experiment **
+**Nutrient Experiment**
 Let's make a script this time that concats the output files in your `chopper_output directory` and then analyses the concat filtered file and your filtered 16S and 18S NCs all in one script.
 
 Make your output directories for your nanoplot data:
@@ -1240,7 +1243,7 @@ NanoPlot --fastq_rich /home/patrh5/nut_exp/chopper_output/NC_18S_filt.fastq.gz -
 Save, close, and then run the script:
 `sbatch /home/patrh5/nut_exp/scripts/plotting_filt_data.sh
 
-** Ward Hunt Microbiomes**
+**Ward Hunt Microbiomes**
 Let's make a script this time that concats the output files in your `chopper_output directory` and then analyses the concat filtered file and your filtered 18S negative control all in one script.
 
 Make your output directories for your nanoplot data:
@@ -1554,7 +1557,7 @@ file=$(ls "$input_dir"/*16S_filt.fastq.gz | sed -n "${SLURM_ARRAY_TASK_ID}p")
 num_cores=$(nproc)
 
 # Run the Emu command with the --threads option
-emu abundance "$file" --db /mbl/share/workspaces/groups/jungblutlab/Emu/standard_db --output-dir /home/patrh5/nut_exp/emu_output/ --threads $num_cores
+emu abundance "$file" --db /mbl/share/workspaces/groups/jungblutlab/Emu/standard_db --output-dir /home/patrh5/nut_exp/emu_output/16S/ --keep-counts --keep-read-assignments --threads $num_cores
 
 ##What is the script doing?
 #1. #!/bin/bash: This line tells the system that this script should be run with the Bash shell.
@@ -1568,6 +1571,9 @@ emu abundance "$file" --db /mbl/share/workspaces/groups/jungblutlab/Emu/standard
 #9. file=$(ls "$input_dir"/*16S_filt.fastq.gz | sed -n "${SLURM_ARRAY_TASK_ID}p"): This line gets the name of the input file based on the array index. This command pipes the output of the ls command to sed, a stream editor. The -n option tells sed not to print anything by default. The "${SLURM_ARRAY_TASK_ID}p" command tells sed to print the line number that matches the current array job index. So if SLURM_ARRAY_TASK_ID is 1, sed prints the first line; if SLURM_ARRAY_TASK_ID is 2, sed prints the second line, and so on.
 #10. num_cores=$(nproc): This line gets the number of CPU cores.
 #11. emu abundance "$file" --db /mbl/share/workspaces/groups/jungblutlab/Emu/standard_db --output-dir /home/patrh5/nut_exp/emu_output/ --threads $num_cores: This line runs the emu abundance command on the input file using all available CPU cores.
+#12. --keep-counts will output the estimated read counts as well as the relative abundance scores
+#13. --keep-read-assignments will output the assignments and probability values for each read
+
 
 ```
 
@@ -1575,14 +1581,15 @@ Save and exit nano, and then submit a job with this .sh file
 
 `sbatch /home/patrh5/nut_exp/scripts/array_emu_16S.sh
 
-This is currently waiting to start
-
 ##Script for 18S annotation using PR2 with Emu
 
 This time we are going to specify the [PR2 database](https://gitlab.com/treangenlab/emu/-/issues/49) for analysis of our 18S reads in the nutrient experiment.
 
 Let's make a directory in our logs folder first specifically for our 18S Emu output
 `mkdir /home/patrh5/logs/emu/18S
+
+Let's also make a new output directory for our 18S files to keep them separate from our 16S files
+`mkdir /home/patrh5/nut_exp/emu_output/18S/
 
 Let's count how many 18S files we have... it should be 40
 `ls /home/patrh5/nut_exp/chopper_output/*18S_filt.fastq.gz | wc 
@@ -1626,15 +1633,132 @@ file=$(ls "$input_dir"/*18S_filt.fastq.gz | sed -n "${SLURM_ARRAY_TASK_ID}p")
 num_cores=$(nproc)
 
 # Run the Emu command with the --threads option
-emu abundance "$file" --db /mbl/share/workspaces/groups/jungblutlab/Emu/standard_db --output-dir /home/patrh5/nut_exp/emu_output/ --threads $num_cores
+emu abundance "$file" --db /mbl/share/workspaces/groups/jungblutlab/Emu/pr2_v5_emu_db/ --output-dir /home/patrh5/nut_exp/emu_output/18S/ --keep-counts --keep-read-assignments --threads $num_cores
 
+#NOTE: The correct database must be specified, in this case our PR2 database
 ```
 
 Run this command using sbatch:
 `sbatch /home/patrh5/nut_exp/scripts/array_emu_18S.sh
 
-##Let's review our output...
+##Script for Ward Hunt environmental microbiomes
 
+First let's make our working directories for our Emu output
+`mkdir /home/patrh5/wh_18S/emu_output/
+
+Then let's make a new log folder for our wh_18S emu outputs
+`mkdir /home/patrh5/logs/emu/wh_18S/
+
+Let's count how many files we have in this project, we don't need to worry about the appendix this time as we only have 18S reads to analyse.
+`ls /home/patrh5/wh_18S/chopper_output/*.fastq.gz | wc 
+
+We have 120 samples so this might take a while!
+
+Let's make our array script in our nutrient experiment scripts folder
+`nano /home/patrh5/wh_18S/scripts/array_emu_18S.sh
+
+Copy in the script file:
+
+```
+#!/bin/bash
+#SBATCH -J emu_wh_18S
+#SBATCH -p day
+#SBATCH --output="/home/patrh5/logs/emu/wh_18S/emu_%A_%a.txt"
+#SBATCH --array=1-120
+
+# Initialize Conda
+source /home/patrh5/miniconda3/etc/profile.d/conda.sh
+
+# Activate the Conda environment where Emu is installed
+conda activate emu-env
+
+# Define the directory containing the .fastq.gz files
+input_dir=/home/patrh5/wh_18S/chopper_output
+
+# Get the name of the input file based on the array index
+file=$(ls "$input_dir"/*.fastq.gz | sed -n "${SLURM_ARRAY_TASK_ID}p")
+
+# Get the number of CPU cores
+num_cores=$(nproc)
+
+# Run the Emu command with the --threads option
+emu abundance "$file" --db /mbl/share/workspaces/groups/jungblutlab/Emu/pr2_v5_emu_db/ --output-dir /home/patrh5/wh_18S/emu_output/ --keep-counts --keep-read-assignments --threads $num_cores
+
+#NOTE: The correct database must be specified, in this case our PR2 database
+```
+## Added bonus, would be cool to see how SILVA does at analysing our 16S reads?
+
+Let's make a directory in our logs folder first specifically for our Silva 16S output
+`mkdir /home/patrh5/logs/emu/silva_16S/
+
+Let's make a subdirectory in our output directory for our silva files
+`mkdir /home/patrh5/nut_exp/emu_output/silva_16S
+
+Let's count how many 16S files we have...
+`ls /home/patrh5/nut_exp/chopper_output/*16S_filt.fastq.gz | wc 
+
+Let's make our array script in our nutrient experiment scripts folder
+`nano /home/patrh5/nut_exp/scripts/array_emu_16S_silva_db.sh
+
+Copy in the script file:
+
+```
+#!/bin/bash
+#SBATCH -J emu_silva_16S
+#SBATCH -p day
+#SBATCH --output="/home/patrh5/logs/emu/silva_16S/emu_silva_16S_%A_%a.txt"
+#SBATCH --array=1-40
+
+# Initialize Conda
+source /home/patrh5/miniconda3/etc/profile.d/conda.sh
+
+# Activate the Conda environment where Emu is installed
+conda activate emu-env
+
+# Define the directory containing the .fastq.gz files
+input_dir=/home/patrh5/nut_exp/chopper_output
+
+# Get the name of the input file based on the array index
+file=$(ls "$input_dir"/*16S_filt.fastq.gz | sed -n "${SLURM_ARRAY_TASK_ID}p")
+
+# Get the number of CPU cores
+num_cores=$(nproc)
+
+# Run the Emu command with the --threads option
+emu abundance "$file" --db /mbl/share/workspaces/groups/jungblutlab/Emu/silva_v138/ --output-dir /home/patrh5/nut_exp/emu_output/silva_16S --keep-counts --keep-read-assignments --threads $num_cores
+
+#Make sure you are specifying the SILVA v138 database in your emu command
+
+```
+
+Save and exit nano, and then submit a job with this .sh file
+
+`sbatch /home/patrh5/nut_exp/scripts/array_emu_16S.sh
+
+#EMU output processing
+EMU outputs a file for each sample containing the taxonomy and relative abundance data:
+1. <file_name>_rel-abundance-threshold-0.0001.tsv 
+2. <file_name>_rel-abundance.tsv
+
+However, all 40 samples produced a `rel-abundance.tsv` file but only 33 samples produced the `rel-abundance-threshold-0.0001.tsv` file, presumably as no values below 0.0001 (0.01%) were identified? This was the same for SILVA annotation.
+
+For some samples it did not produce the 0.0001 version, presumably as no species fell below this level?
+
+To tidy up, let's move all the `rel-abundance-thrseold-0.0001.tsv` files into one subdirectory and the standard `rel-abundance.tsv` files into another.
+
+`mkdir /home/patrh5/nut_exp/emu_output/16S/rel-abundance /home/patrh5/nut_exp/emu_output/16S/rel-abundance-threshold
+
+`mv /home/patrh5/nut_exp/emu_output/16S/*1.tsv home/patrh5/nut_exp/emu_output/16S/rel-abundance-threshold/
+
+The PR2 database only produced one set of output files, presumably as no low abundance ASVs were identified, I had 41 files in this as expected as it contains two copies of `M_TZ1_18S`.
+
+Looking at the taxonomic diversity in both samples it is apparent sample `M_TZ1_b18S` contains much better taxonomic coverage, we are therefore going to move the backup `M_TZ1_18S` into a separate directory.
+
+`mkdir /home/patrh5/nut_exp/emu_output/18S/backup/
+`mv /home/patrh5/nut_exp/emu_output/18S/M_TZ1_18S_filt.fastq_rel-abundance.tsv /home/patrh5/nut_exp/emu_output/18S/BACKUP_ONT1_M_TZ1_18S_filt.fastq_rel-abundance.tsv
+
+We will then rename our preferred file back to the sample ID
+`mv /home/patrh5/nut_exp/emu_output/18S/M_TZ1_b18S_filt.fastq_rel-abundance.tsv /home/patrh5/nut_exp/emu_output/18S/M_TZ1_18S_filt.fastq_rel-abundance.tsv
 
 ##I think to be able to create my total relative abundance table I use the `combine-outputs` positional argument
 
@@ -1651,6 +1775,45 @@ Additional parameters:
 | --- | --- |
 | --split-tables | output 2 tables: (1) abundances only at specified rank and (2) taxonomic lineages down to specified rank |
 | --counts | output estimated counts rather than relative abundance percentage in combined table. Only includes Emu relative abundance outputs that already have 'estimated counts' |
+
+As we specified to keep read counts before, we will include the --counts command. 
+
+###Nutrient Project 16S and 18S abundance tables
+
+```
+#!/bin/bash
+#SBATCH -J emu_silva_16S
+#SBATCH -p day
+#SBATCH --output="/home/patrh5/logs/emu/silva_16S/emu_silva_16S_%A_%a.txt"
+#SBATCH --array=1-40
+
+#16S tables
+#16S relative abundance table
+`emu combine-outputs /home/patrh5/nut_exp/emu-output/16S/rel-abundance/ --counts tax_id #this would include the tax_id and the estimated counts rather than relative abundance
+
+#16S count table
+`emu combine-outputs /home/patrh5/nut_exp/emu-output/16S/rel-abundance/ --counts tax_id #this would include the tax_id and the estimated counts rather than relative abundance
+
+#16S silva db tables
+#16S relative abundance table
+`emu combine-outputs /home/patrh5/nut_exp/emu-output/silva_16S/rel-abundance/ --counts tax_id #this would include the tax_id and the estimated counts rather than relative abundance
+
+#16S silva db count table
+`emu combine-outputs /home/patrh5/nut_exp/emu-output/silva_16S/rel-abundance/ --counts tax_id #this would include the tax_id and the estimated counts rather than relative abundance
+
+#18S tables
+#16S relative abundance table
+`emu combine-outputs /home/patrh5/nut_exp/emu-output/16S/rel-abundance/ --counts tax_id #this would include the tax_id and the estimated counts rather than relative abundance
+
+#18S count table
+`emu combine-outputs /home/patrh5/nut_exp/emu-output/16S/rel-abundance/ --counts tax_id #this would include the tax_id and the estimated counts rather than relative abundance
+
+```
+
+# 10. Krona plots
+
+It would be cool to convert the output abundance table into a Krona plot but I have a lot of samples, maybe I could do it for a few...
+
 ___
 
 # Appendix
@@ -1684,7 +1847,7 @@ Let's create a conda / mamba environment to house the various packages of NanoPa
 ### 2. Usage
 `Nanostat -h # List of commands
 
-`NanoStat --fastq M_C1_16S.fastq.gz --barcoded --name nut_exp --outdir ~/nut_exp/nanostat/statreports
+`NanoStat --fastq M_C1_16S.fastq.gz --barcoded --name wh_18S --outdir ~/wh_18S/nanostat/statreports
  
 NanoStat --fastq reads.fastq.gz --outdir statreports
 
@@ -1692,7 +1855,7 @@ NanoStat --fastq reads.fastq.gz --outdir statreports
 
 The script below will read every single fastq barcode file for the nutrient experiment, and produce an individual quality report for each file.
 
-`nano ~/nut_exp/nanostat/nut_exp_nanostat.sh
+`nano ~/wh_18S/nanostat/wh_18S_nanostat.sh
 
 Copy in this text:
 
@@ -1702,14 +1865,14 @@ Copy in this text:
 
 
 # Loop over all fastq.gz files in the input directory
-for file in ~/nut_exp/single_fastq_barcodes/*.fastq.gz
+for file in ~/wh_18S/single_fastq_barcodes/*.fastq.gz
 do
   # Get the base name of the file (without the directory and extension)
   base_name=$(basename "$file")
 
   # Apply NanoStat to the file and save the output to a file
   echo $base_name
-  NanoStat --fastq $file --name ~/nut_exp/nanostat/stat_summary/$base_name.tsv --outdir ~/nut_exp/nanostat/stat_summary
+  NanoStat --fastq $file --name ~/wh_18S/nanostat/stat_summary/$base_name.tsv --outdir ~/wh_18S/nanostat/stat_summary
   
 done
 
