@@ -1,0 +1,85 @@
+---
+title: Test R markdown file
+author: Patrick Hooper
+date: "2024-02-21"
+output: html_document
+---
+
+This is a R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF and word documents.
+
+# Getting Started
+
+To create an R Markdown report, open a plain text file and save it with the extension .Rmd. 
+
+The concept of markdown is...
+1. markdown for formatted text
+2. knitr for embedded R  code
+3. YAML for render parameters.
+
+# Markdown for formatted text
+
+.Rmd files are meant to contain text written in markdown. Markdown is a set of conventions for formatting plain text.
+
+We have already done this in .md text files, let's try adapt our understanding to use a similar approach in R.
+
+What's the same?
+- Headers are created with #, ##, ###, etc.
+- Italicized and bold text are created with * and **, respectively. 
+- Lists are created with * for bullet points
+- Hypelinks are created with [text](url) syntax, e.g. [Github](https://github.com/paddyhooper)
+
+More information on markdown can be found in the [R Markdown documentation](https://rmarkdown.rstudio.com/authoring_basics.html).
+
+# Rendering
+
+To transform your markdown file into an HTML, PDF, or Word document, you can click the Knit icon above your file in the scripts editor. A drop down menu will let you select the type of output that you want.
+
+# Knitr for embedded R code
+
+The knitr package extends the basic markdown syntax to include chunks of executable R code.
+
+When you render the report, knitr will run the code and add the results to the output file. You can have the output display just the code, just the results, or both.
+
+To embed a chunk of R code, surround the code with two lines that each contain 3 backticks and {r}, which alerts knitr that you have included a chunk of R code, e.g.
+
+Here's some code
+
+```{r}  
+dim(iris)
+```    
+
+
+To emit the code from the final report, add the `echo=FALSE` option to the chunk header, e.g.
+
+```{r, echo=FALSE}
+dim(iris)
+```
+
+This is a great way to present plots without the code, since you usually do not need to see this.
+
+# YAML for render parameters
+You can use a YAML header to control how rmakrdown renderes your .Rmd file. This is a section of key: value pairs surrounded by --- marks, like:
+
+```
+title: "Test R markdown file"
+author: "Patrick Hooper"
+date: "2024-02-21"
+output: html_document
+```
+
+
+The output: value determines what type of output to convert the file into when you call rmarkdown::render(). Note: you do not need to specify output: if you render your file with the RStudio IDE knit button.
+
+output: recognizes the following values:
+
+- html_document, which will create HTML output (default)
+- pdf_document, which will create PDF output
+- word_document, which will create Word output
+
+You can also use output: value to render a slideshow
+
+- output: ioslides_presentation will create an ioslides (HTML5) slideshow
+- output: beamer_presentation will create a beamer (PDF) slideshow
+
+Slides will start at each header or horizontal rule, e.g. ***
+

@@ -1034,6 +1034,10 @@ Save, close, and then run the script:
 
 As such, I am therefore not going to use PoreChop ABI for now as it appears to have formed a large adapter to remove (90bp) which suggests it may not be accurately removing bps based on the consensus approach, I am therefroe going to move porechop-abi to the appendix of this document for now and go straight onto read filtering.
 
+
+ Curry  https://gitlab.com/treangenlab/emu/-/issues/40 - Barcodes should most definitely be removed as these sequences are not inherent in the bacterial genomes and can influence the alignment score. Primers would likely have less of an impact, but are also recommended to be removed prior to running Emu.
+ 
+
 ## Filtering by read length and quality score with Chopper
 
 Now we have applied porechop, the next stage is to improve the quality of our dataset by removing small DNA fragments that are unlikely to be our barcodes, long fragments which are unlikely to be amplicons, and low quality reads using[Chopper](https://github.com/wdecoster/chopper) , another package within NanoPack.
@@ -1557,7 +1561,7 @@ file=$(ls "$input_dir"/*16S_filt.fastq.gz | sed -n "${SLURM_ARRAY_TASK_ID}p")
 num_cores=$(nproc)
 
 # Run the Emu command with the --threads option
-emu abundance "$file" --db /mbl/share/workspaces/groups/jungblutlab/Emu/standard_db --output-dir /home/patrh5/nut_exp/emu_output/16S/ --keep-counts --keep-read-assignments --threads $num_cores
+emu abundance "$file" --db /mbl/share/workspaces/groups/jungblutlab/Emu/standard_db --output-dir /home/patrh5/nut_exp/emu_output/16S/ --keep-counts --keep-read-assignments --output-unclassified --threads $num_cores
 
 ##What is the script doing?
 #1. #!/bin/bash: This line tells the system that this script should be run with the Bash shell.
@@ -1633,7 +1637,7 @@ file=$(ls "$input_dir"/*18S_filt.fastq.gz | sed -n "${SLURM_ARRAY_TASK_ID}p")
 num_cores=$(nproc)
 
 # Run the Emu command with the --threads option
-emu abundance "$file" --db /mbl/share/workspaces/groups/jungblutlab/Emu/pr2_v5_emu_db/ --output-dir /home/patrh5/nut_exp/emu_output/18S/ --keep-counts --keep-read-assignments --threads $num_cores
+emu abundance "$file" --db /mbl/share/workspaces/groups/jungblutlab/Emu/pr2_v5_emu_db/ --output-dir /home/patrh5/nut_exp/emu_output/18S/ --keep-counts --keep-read-assignments --output-unclassified --threads $num_cores
 
 #NOTE: The correct database must be specified, in this case our PR2 database
 ```
@@ -1682,7 +1686,7 @@ file=$(ls "$input_dir"/*.fastq.gz | sed -n "${SLURM_ARRAY_TASK_ID}p")
 num_cores=$(nproc)
 
 # Run the Emu command with the --threads option
-emu abundance "$file" --db /mbl/share/workspaces/groups/jungblutlab/Emu/pr2_v5_emu_db/ --output-dir /home/patrh5/wh_18S/emu_output/ --keep-counts --keep-read-assignments --threads $num_cores
+emu abundance "$file" --db /mbl/share/workspaces/groups/jungblutlab/Emu/pr2_v5_emu_db/ --output-dir /home/patrh5/wh_18S/emu_output/ --keep-counts --keep-read-assignments --output-unclassified --threads $num_cores
 
 #NOTE: The correct database must be specified, in this case our PR2 database
 ```
@@ -1709,11 +1713,11 @@ Copy in the script file:
 #SBATCH --output="/home/patrh5/logs/emu/silva_16S/emu_silva_16S_%A_%a.txt"
 #SBATCH --array=1-40
 
-# Initialize Conda
+# Initialize Condal
 source /home/patrh5/miniconda3/etc/profile.d/conda.sh
 
 # Activate the Conda environment where Emu is installed
-conda activate emu-env
+conda activate emu-envnan
 
 # Define the directory containing the .fastq.gz files
 input_dir=/home/patrh5/nut_exp/chopper_output
@@ -1725,7 +1729,7 @@ file=$(ls "$input_dir"/*16S_filt.fastq.gz | sed -n "${SLURM_ARRAY_TASK_ID}p")
 num_cores=$(nproc)
 
 # Run the Emu command with the --threads option
-emu abundance "$file" --db /mbl/share/workspaces/groups/jungblutlab/Emu/silva_v138/ --output-dir /home/patrh5/nut_exp/emu_output/silva_16S --keep-counts --keep-read-assignments --threads $num_cores
+emu abundance "$file" --db /mbl/share/workspaces/groups/jungblutlab/Emu/silva_v138/ --output-dir /home/patrh5/nut_exp/emu_output/silva_16S --keep-counts --keep-read-assignments --output-unclassified --threads $num_cores
 
 #Make sure you are specifying the SILVA v138 database in your emu command
 
@@ -1740,25 +1744,52 @@ EMU outputs a file for each sample containing the taxonomy and relative abundanc
 1. <file_name>_rel-abundance-threshold-0.0001.tsv 
 2. <file_name>_rel-abundance.tsv
 
-However, all 40 samples produced a `rel-abundance.tsv` file but only 33 samples produced the `rel-abundance-threshold-0.0001.tsv` file, presumably as no values below 0.0001 (0.01%) were identified? This was the same for SILVA annotation.
+**Nutrient Experiment**
+
+*16S reads*
+All 40 samples produced a `rel-abundance.tsv` file but only 33 samples produced the `rel-abundance-threshold-0.0001.tsv` file, presumably as no values below 0.0001 (0.01%) were identified? This was the same for SILVA annotation.
 
 For some samples it did not produce the 0.0001 version, presumably as no species fell below this level?
 
-To tidy up, let's move all the `rel-abundance-thrseold-0.0001.tsv` files into one subdirectory and the standard `rel-abundance.tsv` files into another.
+To tidy up, let's move all the different output files into their own sub-directories.
 
-`mkdir /home/patrh5/nut_exp/emu_output/16S/rel-abundance /home/patrh5/nut_exp/emu_output/16S/rel-abundance-threshold
 
-`mv /home/patrh5/nut_exp/emu_output/16S/*1.tsv home/patrh5/nut_exp/emu_output/16S/rel-abundance-threshold/
+`mkdir /home/patrh5/nut_exp/emu_output/16S/rel-abundance /home/patrh5/nut_exp/emu_output/16S/rel-abundance-threshold /home/patrh5/nut_exp/emu_output/16S/read-assignment-distributions /home/patrh5/nut_exp/emu_output/16S/unclassified
+`mv /home/parth5/nut_exp/emu-output/16S/*abundance.tsv /home/parth5/nut_exp/emu-output/16S/rel-abundance/
+`mv /home/parth5/nut_exp/emu-output/16S/*0001.tsv /home/parth5/nut_exp/emu-output/16S/rel-abundance-threshold/
+`mv /home/parth5/nut_exp/emu-output/16S/*distribution.tsv /home/parth5/nut_exp/emu-output/16S/read-assignment-distributions/
+`mv /home/parth5/nut_exp/emu-output/16S/*.fa /home/parth5/nut_exp/emu-output/16S/unclassified/
 
+*18S reads*
 The PR2 database only produced one set of output files, presumably as no low abundance ASVs were identified, I had 41 files in this as expected as it contains two copies of `M_TZ1_18S`.
 
 Looking at the taxonomic diversity in both samples it is apparent sample `M_TZ1_b18S` contains much better taxonomic coverage, we are therefore going to move the backup `M_TZ1_18S` into a separate directory.
 
 `mkdir /home/patrh5/nut_exp/emu_output/18S/backup/
-`mv /home/patrh5/nut_exp/emu_output/18S/M_TZ1_18S_filt.fastq_rel-abundance.tsv /home/patrh5/nut_exp/emu_output/18S/BACKUP_ONT1_M_TZ1_18S_filt.fastq_rel-abundance.tsv
+`mv /home/patrh5/nut_exp/emu_output/18S/M_TZ1_18S_filt.fastq_rel-abundance.tsv /home/patrh5/nut_exp/emu_output/18S/backup/BACKUP_ONT1_M_TZ1_18S_filt.fastq_rel-abundance.tsv
+`mv /home/patrh5/nut_exp/emu_output/18S/M_TZ1_18S_filt.fastq_read-assignment-distributions.tsv /home/patrh5/nut_exp/emu_output/18S/backup/BACKUP_ONT1_M_TZ1_18S_filt.fastq_read-assignment-distributions.tsv
 
 We will then rename our preferred file back to the sample ID
+`mv /home/patrh5/nut_exp/emu_output/18S/M_TZ1_b18S_filt.fastq_read-assignment-distributions.tsv /home/patrh5/nut_exp/emu_output/18S/M_TZ1_18S_filt.fastq_read-assignment-distributions.tsv
 `mv /home/patrh5/nut_exp/emu_output/18S/M_TZ1_b18S_filt.fastq_rel-abundance.tsv /home/patrh5/nut_exp/emu_output/18S/M_TZ1_18S_filt.fastq_rel-abundance.tsv
+
+Let's next make subdirectories for the emu output files
+`mkdir /home/patrh5/nut_exp/emu_output/18S/rel-abundance /home/patrh5/nut_exp/emu_output/18S/read-assignment-distributions /home/patrh5/nut_exp/emu_output/18S/unclassified
+`mv /home/parth5/nut_exp/emu-output/18S/*abundance.tsv /home/parth5/nut_exp/emu-output/18S/rel-abundance/
+`mv /home/parth5/nut_exp/emu-output/18S/*distribution.tsv /home/parth5/nut_exp/emu-output/18S/read-assignment-distributions/
+`mv /home/parth5/nut_exp/emu-output/18S/*.fa /home/parth5/nut_exp/emu-output/18S/unclassified/
+
+**Ward Hunt Microbiomes**
+For the Ward Hunt Microbiomes, we have a huge 120 samples, we need to first make two directories for our emu output
+
+`mkdir /home/patrh5/wh_18S/emu_output/rel-abundance/
+`mkdir /home/patrh5/wh_18S/emu_output/read-assignment-distributions
+`mkdir /home/patrh5/wh_18S/emu_output/unclassified
+`mv /home/parth5/wh_18S/emu-output/*abundance.tsv /home/parth5/wh_18S/emu-output/rel-abundance/
+`mv /home/parth5/wh_18S/emu-output/*distribution.tsv /home/parth5/wh_18S/emu-output/read-assignment-distributions/
+`mv /home/parth5/wh_18S/emu-output/*.fa /home/parth5/wh_18S/emu-output/unclassified/
+
+In these files we have a number of a and b versions of samples due to the issues I had during PCR amplification. Therefore we will need to look at these more carefully downstream.
 
 ##I think to be able to create my total relative abundance table I use the `combine-outputs` positional argument
 
@@ -1778,42 +1809,467 @@ Additional parameters:
 
 As we specified to keep read counts before, we will include the --counts command. 
 
-###Nutrient Project 16S and 18S abundance tables
+
+
+**Nutrient Project 16S and 18S abundance tables**
+For the combine-outputs step, we are just recombining tsv tables so there isn't really a need to submit it as a job. Instead we will just run this command locally.
+
+Therefore, we must make sure we have our conda environment emu-env activated in our command line session:
+`conda activate emu-env
+
+Then run the combine-outputs command, we are going to create an abundance table and raw counts table with the tax_id label (similar to OTU_ID)l:
+`emu combine-outputs /home/patrh5/nut_exp/emu_output/16S/rel-abundance/ tax_id
+`mv /home/patrh5/nut_exp/emu_output/16S/rel-abundance/emu-combined-tax_id.tsv /home/patrh5/nut_exp/emu_output/16S/rel-abundance/emu-combined-tax_id_ra.tsv
+
+Then run the combine-output commands for the count table:
+`emu combine-outputs /home/patrh5/nut_exp/emu_output/16S/rel-abundance/ tax_id --counts
+
+**Issue with SILVA and PR2 formatting for the 18S reads**
+I contacted the creator of Emu to ask about the output for PR2 files, in v3.4.5 the output does not allow for the output of the higher taxonomic annotation from the PR2 database as the taxonomic lineage is different for this database. More info: https://gitlab.com/treangenlab/emu/-/issues/52
+
+*16S have this annotation:*
+tax_id, abundance, species, genus, family, order, class, phylum, clade, superkingdom, subspecies, species subgroup, species group, estimated counts
+
+*SILVA have this annotation:*
+
+Taxonomy is just laid out as a full taxonomic description divided by ';': tax_id, abundance, lineage, estimated counts
+
+*18S have this annotation:*
+tax_id, abundance ,domain, supergroup, division, subdivision, class, order, family, genus, species, estimated counts
+
+Therefore, combine outputs doesn't work particularly well for these datasets. Therefore, I am going to try do this manually. This approach works using a python script, I run these directly on the command line as they are not intensive jobs. I have GitHub CoPilot to thank for the code development.
+
+We are going to try make our own combined abundance table using GitHub CoPilot and python:
+
+**Nutrient Experiment**
+
+Make a python script for the 16S reads for the nutrient experiment:
+`nano /home/patrh5/nut_exp/scripts/combine_abundance_outputs_16S.py
+
+Copy in this code:
 
 ```
-#!/bin/bash
-#SBATCH -J emu_silva_16S
-#SBATCH -p day
-#SBATCH --output="/home/patrh5/logs/emu/silva_16S/emu_silva_16S_%A_%a.txt"
-#SBATCH --array=1-40
+import os
+import pandas as pd
 
-#16S tables
-#16S relative abundance table
-`emu combine-outputs /home/patrh5/nut_exp/emu-output/16S/rel-abundance/ --counts tax_id #this would include the tax_id and the estimated counts rather than relative abundance
+# Directory containing the .tsv files
+directory = "/home/patrh5/nut_exp/emu_output/16S/rel-abundance/"
 
-#16S count table
-`emu combine-outputs /home/patrh5/nut_exp/emu-output/16S/rel-abundance/ --counts tax_id #this would include the tax_id and the estimated counts rather than relative abundance
+# Initialize an empty DataFrame
+df_combined = pd.DataFrame()
 
-#16S silva db tables
-#16S relative abundance table
-`emu combine-outputs /home/patrh5/nut_exp/emu-output/silva_16S/rel-abundance/ --counts tax_id #this would include the tax_id and the estimated counts rather than relative abundance
+# Loop over the files in the directory
+for filename in os.listdir(directory):
+    # Check if the file is a .tsv file
+    if filename.endswith('.tsv'):
+        # Construct the full file path
+        file_path = os.path.join(directory, filename)
+        
+        # Read the file into a DataFrame
+        df = pd.read_csv(file_path, sep='\t')
+        
+        # Extract the 'tax_id' and 'abundance' columns and set 'tax_id' as the index
+        df = df[['tax_id', 'abundance']].set_index('tax_id')
+        
+        # Rename the 'abundance' column to the name of the file (without the .tsv extension)
+        df.columns = [filename.rstrip('_filt.fastq_rel-abundance.tsv')]
+        
+        # If df_combined is empty, assign df to it, otherwise merge df into df_combined
+        if df_combined.empty:
+            df_combined = df
+        else:
+            df_combined = df_combined.merge(df, left_index=True, right_index=True, how='outer')
 
-#16S silva db count table
-`emu combine-outputs /home/patrh5/nut_exp/emu-output/silva_16S/rel-abundance/ --counts tax_id #this would include the tax_id and the estimated counts rather than relative abundance
+# Fill NaN values with 0
+df_combined.fillna(0, inplace=True)
 
-#18S tables
-#16S relative abundance table
-`emu combine-outputs /home/patrh5/nut_exp/emu-output/16S/rel-abundance/ --counts tax_id #this would include the tax_id and the estimated counts rather than relative abundance
+# Write the combined DataFrame to a .tsv file
+df_combined.to_csv('16S_abundance_combined.tsv', sep='\t')
+```
+We run python code in our base conda environment with:
+`python /home/patrh5/nut_exp/scripts/combine_abundance_outputs_16S.py
 
-#18S count table
-`emu combine-outputs /home/patrh5/nut_exp/emu-output/16S/rel-abundance/ --counts tax_id #this would include the tax_id and the estimated counts rather than relative abundance
+
+
+Now let's make a separate script that exports the taxonomy for our tax_ids:
+
+`nano /home/patrh5/nut_exp/scripts/combine_taxonomic_outputs_16S.py
+
+Copy in this text:
 
 ```
+import os
+import pandas as pd
+
+# Directory containing the .tsv files
+directory = "/home/patrh5/nut_exp/emu_output/16S/rel-abundance/"
+
+# Initialize an empty DataFrame
+df_combined = pd.DataFrame()
+
+# Loop over the files in the directory
+for filename in os.listdir(directory):
+    # Check if the file is a .tsv file
+    if filename.endswith('.tsv'):
+        # Construct the full file path
+        file_path = os.path.join(directory, filename)
+        
+        # Read the file into a DataFrame, excluding 'abundance' and 'estimated counts' columns
+        df = pd.read_csv(file_path, sep='\t').drop(columns=['abundance', 'estimated counts'], errors='ignore')
+        
+        # If df_combined is empty, assign df to it, otherwise concatenate df to df_combined
+        if df_combined.empty:
+            df_combined = df
+        else:
+            df_combined = pd.concat([df_combined, df])
+
+# Remove duplicate rows based on the 'tax_id' column
+df_combined.drop_duplicates(subset='tax_id', keep='first', inplace=True)
+
+# Write the combined DataFrame to a .tsv file
+df_combined.to_csv('16S_taxonomy_combined.tsv', sep='\t', index=False)
+```
+
+Now let's output the estimated counts:
+`nano /home/patrh5/nut_exp/scripts/combine_counts_outputs_16S.py
+
+```
+import os
+import pandas as pd
+
+# Directory containing the .tsv files
+directory = "/home/patrh5/nut_exp/emu_output/16S/rel-abundance/"
+
+# Initialize an empty DataFrame
+df_combined = pd.DataFrame()
+
+# Loop over the files in the directory
+for filename in os.listdir(directory):
+    # Check if the file is a .tsv file
+    if filename.endswith('.tsv'):
+        # Construct the full file path
+        file_path = os.path.join(directory, filename)
+        
+        # Read the file into a DataFrame
+        df = pd.read_csv(file_path, sep='\t')
+        
+        # Extract the 'tax_id' and 'estimated counts' columns and set 'tax_id' as the index
+        df = df[['tax_id', 'estimated counts']].set_index('tax_id')
+        
+        # Rename the 'abundance' column to the name of the file (without the .tsv extension)
+        df.columns = [filename.rstrip('_filt.fastq_rel-abundance.tsv')]
+        
+        # If df_combined is empty, assign df to it, otherwise merge df into df_combined
+        if df_combined.empty:
+            df_combined = df
+        else:
+            df_combined = df_combined.merge(df, left_index=True, right_index=True, how='outer')
+
+# Fill NaN values with 0
+df_combined.fillna(0, inplace=True)
+
+# Write the combined DataFrame to a .tsv file
+df_combined.to_csv('16S_estimated_counts_combined.tsv', sep='\t')
+```
+
+Let's repeat this for the 18S samples for the nutrient experiment:
+
+NOTE: First we need to remove our duplicated sample. We are going to remove M_TZ1_18S and keep M_TZ1_b18S.
+`rm /home/patrh5/nut_exp/emu_output/18S/rel-abundance/M_TZ1_18S_filt.fastq_rel_abundance.tsv
+`mv /home/patrh5/nut_exp/emu_output/18S/rel-abundance/M_TZ1_b18S_filt.fastq_rel_abundance.tsv /home/patrh5/nut_exp/emu_output/18S/rel-abundance/M_TZ1_18S_filt.fastq_rel_abundance.tsv
+
+Make a python script:
+`nano /home/patrh5/nut_exp/scripts/combine_abundance_outputs_18S.py
+
+Copy in this code:
+```
+import os
+import pandas as pd
+
+# Directory containing the .tsv files
+directory = "/home/patrh5/nut_exp/emu_output/18S/rel-abundance/"
+
+# Initialize an empty DataFrame
+df_combined = pd.DataFrame()
+
+# Loop over the files in the directory
+for filename in os.listdir(directory):
+    # Check if the file is a .tsv file
+    if filename.endswith('.tsv'):
+        # Construct the full file path
+        file_path = os.path.join(directory, filename)
+        
+        # Read the file into a DataFrame
+        df = pd.read_csv(file_path, sep='\t')
+        
+        # Extract the 'tax_id' and 'abundance' columns and set 'tax_id' as the index
+        df = df[['tax_id', 'abundance']].set_index('tax_id')
+        
+        # Rename the 'abundance' column to the name of the file (without the .tsv extension)
+        df.columns = [filename.rstrip('_filt.fastq_rel-abundance.tsv')]
+        
+        # If df_combined is empty, assign df to it, otherwise merge df into df_combined
+        if df_combined.empty:
+            df_combined = df
+        else:
+            df_combined = df_combined.merge(df, left_index=True, right_index=True, how='outer')
+
+# Fill NaN values with 0
+df_combined.fillna(0, inplace=True)
+
+# Write the combined DataFrame to a .tsv file
+df_combined.to_csv('18S_abundance_combined.tsv', sep='\t')
+```
+
+Run this code with python:
+`python /home/patrh5/nut_exp/scripts/combine_abundance_outputs_18S.py
+
+Now let's make a separate script that exports the taxonomy for our tax_ids
+
+`nano /home/patrh5/nut_exp/scripts/combine_taxonomic_outputs_18S.py
+
+Copy in this text:
+
+```
+import os
+import pandas as pd
+
+# Directory containing the .tsv files
+directory = "/home/patrh5/nut_exp/emu_output/18S/rel-abundance/"
+
+# Initialize an empty DataFrame
+df_combined = pd.DataFrame()
+
+# Loop over the files in the directory
+for filename in os.listdir(directory):
+    # Check if the file is a .tsv file
+    if filename.endswith('.tsv'):
+        # Construct the full file path
+        file_path = os.path.join(directory, filename)
+        
+        # Read the file into a DataFrame, excluding 'abundance' and 'estimated counts' columns
+        df = pd.read_csv(file_path, sep='\t').drop(columns=['abundance', 'estimated counts'], errors='ignore')
+        
+        # If df_combined is empty, assign df to it, otherwise concatenate df to df_combined
+        if df_combined.empty:
+            df_combined = df
+        else:
+            df_combined = pd.concat([df_combined, df])
+
+# Remove duplicate rows based on the 'tax_id' column
+df_combined.drop_duplicates(subset='tax_id', keep='first', inplace=True)
+
+# Write the combined DataFrame to a .tsv file
+df_combined.to_csv('18S_taxonomy_combined.tsv', sep='\t', index=False)
+```
+Run this command:
+`python /home/patrh5/nut_exp/scripts/combine_taxonomic_outputs_18S.py
+
+Finally, let's output the estimated counts:
+`nano /home/patrh5/nut_exp/scripts/combine_counts_outputs_18S.py
+
+```
+import os
+import pandas as pd
+
+# Directory containing the .tsv files
+directory = "/home/patrh5/nut_exp/emu_output/18S/rel-abundance/"
+
+# Initialize an empty DataFrame
+df_combined = pd.DataFrame()
+
+# Loop over the files in the directory
+for filename in os.listdir(directory):
+    # Check if the file is a .tsv file
+    if filename.endswith('.tsv'):
+        # Construct the full file path
+        file_path = os.path.join(directory, filename)
+        
+        # Read the file into a DataFrame
+        df = pd.read_csv(file_path, sep='\t')
+        
+        # Extract the 'tax_id' and 'estimated counts' columns and set 'tax_id' as the index
+        df = df[['tax_id', 'estimated counts']].set_index('tax_id')
+        
+        # Rename the 'abundance' column to the name of the file (without the .tsv extension)
+        df.columns = [filename.rstrip('_filt.fastq_rel-abundance.tsv')]
+        
+        # If df_combined is empty, assign df to it, otherwise merge df into df_combined
+        if df_combined.empty:
+            df_combined = df
+        else:
+            df_combined = df_combined.merge(df, left_index=True, right_index=True, how='outer')
+
+# Fill NaN values with 0
+df_combined.fillna(0, inplace=True)
+
+# Write the combined DataFrame to a .tsv file
+df_combined.to_csv('18S_estimated_counts_combined.tsv', sep='\t')
+```
+
+Run this script:
+`python /home/patrh5/nut_exp/scripts/combine_counts_outputs_18S.py
+
+All these files are output to the home directory, I therefore moved them into the 'nut_exp' directory in the'emu_output' subdirectory.
+`mv ~/*.tsv nut_exp/emu_output/
+
+**Ward Hunt Microbiomes**
+
+Make a python script:
+`nano /home/patrh5/wh_18S/scripts/combine_abundance_outputs_18S.py
+
+Copy in this code:
+```
+import os
+import pandas as pd
+
+# Directory containing the .tsv files
+directory = "/home/patrh5/wh_18S/emu_output/rel-abundance/"
+
+# Initialize an empty DataFrame
+df_combined = pd.DataFrame()
+
+# Loop over the files in the directory
+for filename in os.listdir(directory):
+    # Check if the file is a .tsv file
+    if filename.endswith('.tsv'):
+        # Construct the full file path
+        file_path = os.path.join(directory, filename)
+        
+        # Read the file into a DataFrame
+        df = pd.read_csv(file_path, sep='\t')
+        
+        # Extract the 'tax_id' and 'abundance' columns and set 'tax_id' as the index
+        df = df[['tax_id', 'abundance']].set_index('tax_id')
+        
+        # Rename the 'abundance' column to the name of the file (without the .tsv extension)
+        df.columns = [filename.rstrip('_filt.fastq_rel-abundance.tsv')]
+        
+        # If df_combined is empty, assign df to it, otherwise merge df into df_combined
+        if df_combined.empty:
+            df_combined = df
+        else:
+            df_combined = df_combined.merge(df, left_index=True, right_index=True, how='outer')
+
+# Fill NaN values with 0
+df_combined.fillna(0, inplace=True)
+
+# Write the combined DataFrame to a .tsv file
+df_combined.to_csv('18S_abundance_combined.tsv', sep='\t')
+```
+
+Run this code with python:
+`python /home/patrh5/wh_18S/scripts/combine_abundance_outputs_18S.py
+
+Now let's make a separate script that exports the taxonomy for our tax_ids
+
+`nano /home/patrh5/wh_18S/scripts/combine_taxonomic_outputs_18S.py
+
+Copy in this text:
+
+```
+import os
+import pandas as pd
+
+# Directory containing the .tsv files
+directory = "/home/patrh5/wh_18S/emu_output/rel-abundance/"
+
+# Initialize an empty DataFrame
+df_combined = pd.DataFrame()
+
+# Loop over the files in the directory
+for filename in os.listdir(directory):
+    # Check if the file is a .tsv file
+    if filename.endswith('.tsv'):
+        # Construct the full file path
+        file_path = os.path.join(directory, filename)
+        
+        # Read the file into a DataFrame, excluding 'abundance' and 'estimated counts' columns
+        df = pd.read_csv(file_path, sep='\t').drop(columns=['abundance', 'estimated counts'], errors='ignore')
+        
+        # If df_combined is empty, assign df to it, otherwise concatenate df to df_combined
+        if df_combined.empty:
+            df_combined = df
+        else:
+            df_combined = pd.concat([df_combined, df])
+
+# Remove duplicate rows based on the 'tax_id' column
+df_combined.drop_duplicates(subset='tax_id', keep='first', inplace=True)
+
+# Write the combined DataFrame to a .tsv file
+df_combined.to_csv('18S_taxonomy_combined.tsv', sep='\t', index=False)
+```
+Run this command:
+`python /home/patrh5/wh_18S/scripts/combine_taxonomic_outputs_18S.py
+
+Finally, let's output the estimated counts:
+`nano /home/patrh5/wh_18S/scripts/combine_counts_outputs_18S.py
+
+```
+import os
+import pandas as pd
+
+# Directory containing the .tsv files
+directory = "/home/patrh5/wh_18S/emu_output/rel-abundance/"
+
+# Initialize an empty DataFrame
+df_combined = pd.DataFrame()
+
+# Loop over the files in the directory
+for filename in os.listdir(directory):
+    # Check if the file is a .tsv file
+    if filename.endswith('.tsv'):
+        # Construct the full file path
+        file_path = os.path.join(directory, filename)
+        
+        # Read the file into a DataFrame
+        df = pd.read_csv(file_path, sep='\t')
+        
+        # Extract the 'tax_id' and 'estimated counts' columns and set 'tax_id' as the index
+        df = df[['tax_id', 'estimated counts']].set_index('tax_id')
+        
+        # Rename the 'abundance' column to the name of the file (without the .tsv extension)
+        df.columns = [filename.rstrip('_filt.fastq_rel-abundance.tsv')]
+        
+        # If df_combined is empty, assign df to it, otherwise merge df into df_combined
+        if df_combined.empty:
+            df_combined = df
+        else:
+            df_combined = df_combined.merge(df, left_index=True, right_index=True, how='outer')
+
+# Fill NaN values with 0
+df_combined.fillna(0, inplace=True)
+
+# Write the combined DataFrame to a .tsv file
+df_combined.to_csv('18S_estimated_counts_combined.tsv', sep='\t')
+```
+
+Run this script:
+`python /home/patrh5/wh_18S/scripts/combine_counts_outputs_18S.py
+
+All these files are output to the home directory, I therefore moved them into the 'wh_18S' directory in the'emu_output' subdirectory.
+`mv ~/*.tsv wh_18S/emu_output/
+
+
+
+
 
 # 10. Krona plots
 
 It would be cool to convert the output abundance table into a Krona plot but I have a lot of samples, maybe I could do it for a few...
 
+Let's first try create a krona conda environment
+`mamba create -n krona-env -c biocona krona
+`conda acticate krona-env
+`conda list #check for krona
+
+On first install we also have to install the krona taxonomy by putting ourselves in our krona-env directory and then running the following script:
+`cd /home/patrh5/miniconda3/envs/krona-env/opt/krona/
+`./updateTaxonomy.sh #make sure you are in your krona directory
+
+Then run our krona command on our imported .tsv file
+
+`ktImportText -o /home/patrh5/wh_18S/krona/deep_mat_ra.html /home/patrh5/wh_18S/krona/test_deep_mat_krona.tsv
 ___
 
 # Appendix
