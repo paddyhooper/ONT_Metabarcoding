@@ -1,10 +1,10 @@
-# Using the NHM HPC Server and slurm
+# Using an HPC Server and slurm
 
 This Markdown document was created by Patrick M. Hooper on 16/01/2024.
 
 # What is the HPC cluster?
 
-The NHM's HPC (High Performance Computing) cluster is a group of servers on which you can run scientific analyses and computations.
+The HPC (High Performance Computing) cluster is a group of servers on which you can run scientific analyses and computations.
 
 # Structure of the HPC
 
@@ -27,7 +27,7 @@ There are three compute nodes:
 
 **You can ONLY SSH into the Head Node and access the CPU nodes from the Head Node
 
-# Saving data on the NHM HPC Servers
+# Saving data on the HPC Servers
 
 ## Personal workspace A.K.A Home Directory
 
@@ -38,10 +38,6 @@ Therefore, we save important files in our group workspaces.
 ## Group workspaces
 
 Your work should ideally be kept in a group workspace. Group workspaces are located in /workspaces/groups and are organized by project. If you need a new group folder for a project you are working on, contact TS to request one. Access can also be granted to your colleagues, so group workspaces are ideal for collaboration. The default size limit is 2TB, but TS can increase this if necessary.
-
-You can navigate to a group workspace via:
-
-`/gpfs/nhmfsa/bulk/share/data/mbl/share/workspaces/groups/<folder_name>
 
 ## Scratch Space
 
@@ -62,8 +58,6 @@ The following table describes the backup schedule for the different areas on Val
 # How to move files around the server using rsync
 
 `rsync <originfolder>/<filename> <username>@hpc-head-002:/<destination_folder>`
-
-`rsync /gpfs/nhmfsa/bulk/share/data/mbl/share/workspaces/groups/your_folder patrh5@hpc-head-002:/home/
 
 # How to install software
 
