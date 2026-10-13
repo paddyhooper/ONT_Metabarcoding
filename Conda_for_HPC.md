@@ -1,4 +1,4 @@
-# Conda on the NHM HPC
+# Conda on HPC
 
 This Markdown document was created by Patrick M. Hooper on 13/02/2024.
 
