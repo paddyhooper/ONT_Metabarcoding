@@ -1,4 +1,4 @@
-# Coding_Basics
+# ONT 16S and 18S rRNA gene Metabarcoding with Emu
 
  Here is a directory of markdown files I wrote for the analysis of Oxford Nanopore Technologies (ONT) sequencing data for full length 16S and 18S rRNA gene metabarcoding data.
 
